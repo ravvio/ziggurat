@@ -1,0 +1,6 @@
+[submodule "libs/zBench"]
+	path = libs/zBench
+	url = https://github.com/hendriknielaender/zBench.git
+[submodule "zBench"]
+	path = zBench
+	url = https://github.com/hendriknielaender/zBench.git
