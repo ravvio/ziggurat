@@ -10,6 +10,8 @@ const math = @import("./benches/math.zig");
 const perft = @import("./benches/perft.zig");
 
 pub fn main() !void {
+    movegen.tables.initAll();
+
     const stdout = std.io.getStdOut().writer();
     var bench = zbench.Benchmark.init(std.heap.page_allocator, .{});
     defer bench.deinit();
@@ -23,28 +25,29 @@ pub fn main() !void {
 
     try bench.add("Subtract usize", math.benchSubtractUsize, .{});
 
-    // Perft benches
-    var mg = movegen.MoveGenTables.new();
-    defer mg.deinit();
-
     try bench.addParam(
         "Perft2 startpos",
-        &perft.PerftBench.init(&mg, chess.constants.Fen.STARTPOS, 2),
+        &perft.PerftBench.init(chess.constants.Fen.STARTPOS, 2),
         .{},
     );
     try bench.addParam(
         "Perft4 startpos",
-        &perft.PerftBench.init(&mg, chess.constants.Fen.STARTPOS, 4),
+        &perft.PerftBench.init(chess.constants.Fen.STARTPOS, 4),
+        .{},
+    );
+    try bench.addParam(
+        "Perft6 startpos",
+        &perft.PerftBench.init(chess.constants.Fen.STARTPOS, 6),
         .{},
     );
     try bench.addParam(
         "Perft2 kiwipete",
-        &perft.PerftBench.init(&mg, chess.constants.Fen.KIWIPETE, 2),
+        &perft.PerftBench.init(chess.constants.Fen.KIWIPETE, 2),
         .{},
     );
     try bench.addParam(
         "Perft4 kiwipete",
-        &perft.PerftBench.init(&mg, chess.constants.Fen.KIWIPETE, 4),
+        &perft.PerftBench.init(chess.constants.Fen.KIWIPETE, 4),
         .{},
     );
 

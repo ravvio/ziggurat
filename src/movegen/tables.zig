@@ -1,4 +1,5 @@
 const std = @import("std");
+const masks = @import("masks.zig");
 const assert = std.debug.assert;
 const ArrayList = std.ArrayList;
 const chess = @import("../chess.zig");
@@ -7,94 +8,122 @@ const Magic = magic.Magic;
 const init = @import("tables_init.zig");
 
 /// Sizes of the attack tables for rooks and bishops
-pub const ROOK_TABLE_SIZE: usize = 102_400;
-pub const BISHOP_TABLE_SIZE: usize = 5_248;
+const white_pawns = init.initWhitePawns();
+const black_pawns = init.initBlackPawns();
+const king = init.initKing();
+const knight = init.initKnight();
 
-/// The move generator, holds attack tables for every peices
-/// and the magics
-pub const MoveGenTables = struct {
-    arena: std.heap.ArenaAllocator,
-    king: [64]u64,
-    knight: [64]u64,
-    white_pawns: [64]u64,
-    black_pawns: [64]u64,
-    rook: []u64,
-    bishop: []u64,
-    rook_magics: [64]Magic,
-    bishop_magics: [64]Magic,
+var rook_masks: [64]u64 = std.mem.zeroes([64]u64);
+var rook_shifts: [64]u6 = std.mem.zeroes([64]u6);
+var rook: [64][4096]u64 = std.mem.zeroes([64][4096]u64);
 
-    pub fn new() MoveGenTables {
-        // TODO: try to switch to a FixedBufferAllocator
-        // or provide allocator as argument
-        // or make it in stack
-        var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-        const allocator = arena.allocator();
-        var rook: []u64 = allocator.alloc(u64, ROOK_TABLE_SIZE) catch {
-            @panic("Could not allocate rook tables");
-        };
-        const rook_magics = init.initMagics(&rook, chess.constants.pieces.ROOK);
-        var bishop: []u64 = allocator.alloc(u64, BISHOP_TABLE_SIZE) catch {
-            @panic("Could not allocate bishop tables");
-        };
-        const bishop_magics = init.initMagics(&bishop, chess.constants.pieces.BISHOP);
+var bishop_masks: [64]u64 = std.mem.zeroes([64]u64);
+var bishop_shifts: [64]u6 = std.mem.zeroes([64]u6);
+var bishop: [64][512]u64 = std.mem.zeroes([64][512]u64);
 
-        return MoveGenTables{
-            .arena = arena,
-            .king = init.initKing(),
-            .knight = init.initKnight(),
-            .white_pawns = init.initWhitePawns(),
-            .black_pawns = init.initBlackPawns(),
-            .rook = rook,
-            .bishop = bishop,
-            .rook_magics = rook_magics,
-            .bishop_magics = bishop_magics,
-        };
-    }
+pub fn initRookMagics() void {
+    for (chess.Square.ALL_SQUARES) |sq| {
+        const mask = masks.rookMask(sq);
+        const bits: u64 = @popCount(mask);
 
-    pub fn deinit(mg: MoveGenTables) void {
-        mg.arena.deinit();
-    }
+        rook_masks[sq.x] = mask;
+        rook_shifts[sq.x] = @truncate(64 - bits);
 
-    pub fn kingAttacks(mg: MoveGenTables, sq: usize) u64 {
-        return mg.king[sq];
-    }
+        // Carry-Rippler
+        // https://www.chessprogramming.org/Traversing_Subsets_of_a_Set
+        var subset: u64 = 0;
+        var index: u64 = 0;
+        while (true) {
+            // The subset is the blockers board
+            index = subset;
+            index = index *% magic.ROOK_MAGIC_NRS[sq.x];
+            index = index >> rook_shifts[sq.x];
 
-    pub fn rookAttacks(mg: MoveGenTables, sq: usize, occupied: u64) u64 {
-        return mg.rook[mg.rook_magics[sq].getIndex(occupied)];
-    }
+            rook[sq.x][index] = masks.bbRay(subset, sq, chess.constants.Direction.Up) //
+            | masks.bbRay(subset, sq, chess.constants.Direction.Right) //
+            | masks.bbRay(subset, sq, chess.constants.Direction.Down) //
+            | masks.bbRay(subset, sq, chess.constants.Direction.Left);
 
-    pub fn bishopAttacks(mg: MoveGenTables, sq: usize, occupied: u64) u64 {
-        return mg.bishop[mg.bishop_magics[sq].getIndex(occupied)];
-    }
-
-    pub fn queenAttacks(mg: MoveGenTables, sq: usize, occupied: u64) u64 {
-        return mg.rookAttacks(sq, occupied) | mg.bishopAttacks(sq, occupied);
-    }
-
-    pub fn knightAttacks(mg: MoveGenTables, sq: usize) u64 {
-        return mg.knight[sq];
-    }
-
-    pub fn whitePawnAttacks(mg: MoveGenTables, sq: usize) u64 {
-        return mg.white_pawns[sq];
-    }
-
-    pub fn blackPawnAttacks(mg: MoveGenTables, sq: usize) u64 {
-        return mg.white_pawns[sq];
-    }
-
-    pub fn pawnAttacks(mg: MoveGenTables, color: bool, sq: usize) u64 {
-        if (color) {
-            return mg.white_pawns[sq];
-        } else {
-            return mg.black_pawns[sq];
+            subset = (subset -% mask) & mask;
+            if (subset == 0) {
+                break;
+            }
         }
     }
-};
+}
 
-test "initialize move generation tables" {
-    const mv = MoveGenTables.new();
-    try std.testing.expectEqual(ROOK_TABLE_SIZE, mv.rook.len);
-    try std.testing.expectEqual(BISHOP_TABLE_SIZE, mv.bishop.len);
-    defer mv.deinit();
+pub fn initBishopMagics() void {
+    for (chess.Square.ALL_SQUARES) |sq| {
+        const mask = masks.bishopMask(sq);
+        const bits: u64 = @popCount(mask);
+
+        bishop_masks[sq.x] = mask;
+        bishop_shifts[sq.x] = @truncate(64 - bits);
+
+        // Carry-Rippler
+        // https://www.chessprogramming.org/Traversing_Subsets_of_a_Set
+        var subset: u64 = 0;
+        var index: u64 = 0;
+        while (true) {
+            // The subset is the blockers board
+            index = subset;
+            index = index *% magic.BISHOP_MAGIC_NRS[sq.x];
+            index = index >> bishop_shifts[sq.x];
+
+            bishop[sq.x][index] = masks.bbRay(subset, sq, chess.constants.Direction.UpLeft) //
+            | masks.bbRay(subset, sq, chess.constants.Direction.UpRight) //
+            | masks.bbRay(subset, sq, chess.constants.Direction.DownLeft) //
+            | masks.bbRay(subset, sq, chess.constants.Direction.DownRight);
+
+            subset = (subset -% mask) & mask;
+            if (subset == 0) {
+                break;
+            }
+        }
+    }
+}
+
+pub fn initAll() void {
+    initRookMagics();
+    initBishopMagics();
+}
+
+pub fn kingAttacks(sq: usize) u64 {
+    return king[sq];
+}
+
+pub fn rookAttacks(sq: usize, occupied: u64) u64 {
+    return rook[sq][
+        ((occupied & rook_masks[sq]) *% magic.ROOK_MAGIC_NRS[sq]) >> rook_shifts[sq]
+    ];
+}
+
+pub fn bishopAttacks(sq: usize, occupied: u64) u64 {
+    return bishop[sq][
+        ((occupied & bishop_masks[sq]) *% magic.BISHOP_MAGIC_NRS[sq]) >> bishop_shifts[sq]
+    ];
+}
+
+pub fn queenAttacks(sq: usize, occupied: u64) u64 {
+    return rookAttacks(sq, occupied) | bishopAttacks(sq, occupied);
+}
+
+pub fn knightAttacks(sq: usize) u64 {
+    return knight[sq];
+}
+
+pub fn whitePawnAttacks(sq: usize) u64 {
+    return white_pawns[sq];
+}
+
+pub fn blackPawnAttacks(sq: usize) u64 {
+    return black_pawns[sq];
+}
+
+pub fn pawnAttacks(color: bool, sq: usize) u64 {
+    if (color) {
+        return white_pawns[sq];
+    } else {
+        return black_pawns[sq];
+    }
 }

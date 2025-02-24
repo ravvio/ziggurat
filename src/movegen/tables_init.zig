@@ -68,45 +68,45 @@ pub fn initBlackPawns() [64]u64 {
 
 // zig fmt: on
 
-pub fn initMagics(table: *[]u64, piece: usize) [64]Magic {
-    assert(piece == pieces.ROOK or piece == pieces.BISHOP);
-    const is_rook: bool = piece == pieces.ROOK;
-
-    var magics = std.mem.zeroes([64]Magic);
-    var offset: usize = 0;
-
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-
-    for (Square.ALL_SQUARES) |sq| {
-        const mask = if (is_rook) masks.rookMask(sq) else masks.bishopMask(sq);
-        const bits: u64 = @popCount(mask);
-        const permutations: u64 = std.math.pow(u64, 2, bits);
-        const end = offset + permutations - 1;
-
-        const blocker_boards = masks.blockerBoards(allocator, mask);
-        const attack_boards = if (is_rook) masks.rookAttackBoards(allocator, sq, &blocker_boards) else masks.bishopAttackBoards(allocator, sq, &blocker_boards);
-
-        var new_magic = Magic{
-            .mask = mask,
-            .shift = @truncate(64 - bits),
-            .offset = offset,
-            .nr = if (is_rook) magic.ROOK_MAGIC_NRS[sq.x] else magic.BISHOP_MAGIC_NRS[sq.x],
-        };
-
-        for (0..permutations) |i| {
-            const index = new_magic.getIndex(blocker_boards.items[i]);
-            assert(table.*[index] != 0);
-            assert(index >= offset);
-            assert(index <= end);
-            table.*[index] = attack_boards.items[i];
-        }
-
-        magics[sq.x] = new_magic;
-        offset += permutations;
-    }
-
-    assert(offset == (if (is_rook) tables.ROOK_TABLE_SIZE else tables.BISHOP_TABLE_SIZE));
-    return magics;
-}
+// pub fn initMagics(table: *[]u64, piece: usize) [64]Magic {
+//     assert(piece == pieces.ROOK or piece == pieces.BISHOP);
+//     const is_rook: bool = piece == pieces.ROOK;
+//
+//     var magics = std.mem.zeroes([64]Magic);
+//     var offset: usize = 0;
+//
+//     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+//     defer arena.deinit();
+//     const allocator = arena.allocator();
+//
+//     for (Square.ALL_SQUARES) |sq| {
+//         const mask = if (is_rook) masks.rookMask(sq) else masks.bishopMask(sq);
+//         const bits: u64 = @popCount(mask);
+//         const permutations: u64 = std.math.pow(u64, 2, bits);
+//         const end = offset + permutations - 1;
+//
+//         const blocker_boards = masks.blockerBoards(allocator, mask);
+//         const attack_boards = if (is_rook) masks.rookAttackBoards(allocator, sq, &blocker_boards) else masks.bishopAttackBoards(allocator, sq, &blocker_boards);
+//
+//         var new_magic = Magic{
+//             .mask = mask,
+//             .shift = @truncate(64 - bits),
+//             .offset = offset,
+//             .nr = if (is_rook) magic.ROOK_MAGIC_NRS[sq.x] else magic.BISHOP_MAGIC_NRS[sq.x],
+//         };
+//
+//         for (0..permutations) |i| {
+//             const index = new_magic.getIndex(blocker_boards.items[i]);
+//             assert(table.*[index] != 0);
+//             assert(index >= offset);
+//             assert(index <= end);
+//             table.*[index] = attack_boards.items[i];
+//         }
+//
+//         magics[sq.x] = new_magic;
+//         offset += permutations;
+//     }
+//
+//     assert(offset == (if (is_rook) tables.ROOK_TABLE_SIZE else tables.BISHOP_TABLE_SIZE));
+//     return magics;
+// }

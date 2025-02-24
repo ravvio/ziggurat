@@ -35,61 +35,43 @@ pub fn bishopMask(s: Square) u64 {
 }
 
 pub fn rookAttackBoards(
-    allocator: std.mem.Allocator,
     s: Square,
-    blockers: *const ArrayList(u64),
-) ArrayList(u64) {
-    var attack_boards = ArrayList(u64).init(allocator);
-    for (blockers.items) |b| {
+    blockers: *const [64]u64,
+) [64]u64 {
+    var attack_boards = std.mem.zeroes([64]u64);
+    var i: usize = 0;
+    for (blockers) |b| {
         // zig fmt: off
-        attack_boards.append(
+        attack_boards[i] = (
             bbRay(b, s, Direction.Up)
             | bbRay(b, s, Direction.Right)
             | bbRay(b, s, Direction.Down)
             | bbRay(b, s, Direction.Left)
-        ) catch |e| {
-            std.debug.print("Error while appening to attack boards: {}", .{e});
-        };
+        );
+        i += 1;
         // zig fmt: on
     }
     return attack_boards;
 }
 
 pub fn bishopAttackBoards(
-    allocator: std.mem.Allocator,
     s: Square,
-    blockers: *const ArrayList(u64),
-) ArrayList(u64) {
-    var attack_boards = ArrayList(u64).init(allocator);
-    for (blockers.items) |b| {
+    blockers: *const [64]u64,
+) [64]u64 {
+    var attack_boards = std.mem.zeroes([64]u64);
+    var i: usize = 0;
+    for (blockers) |b| {
         // zig fmt: off
-        attack_boards.append(
+        attack_boards[i] = (
             bbRay(b, s, Direction.UpLeft)
             | bbRay(b, s, Direction.UpRight)
             | bbRay(b, s, Direction.DownLeft)
             | bbRay(b, s, Direction.DownRight)
-        ) catch { @panic("Could not appent to attack boards"); };
+        );
+        i += 1;
         // zig fmt: on
     }
     return attack_boards;
-}
-
-pub fn blockerBoards(allocator: std.mem.Allocator, mask: u64) ArrayList(u64) {
-    var blocker_boards = ArrayList(u64).init(allocator);
-    var n: u64 = bitboard.EMPTY;
-
-    // Carry-Rippler
-    // https://www.chessprogramming.org/Traversing_Subsets_of_a_Set
-    while (true) {
-        blocker_boards.append(n) catch |e| {
-            std.debug.print("Error while appending to attack boards: {}", .{e});
-        };
-        n = (n -% mask) & mask;
-        if (n == bitboard.EMPTY) {
-            break;
-        }
-    }
-    return blocker_boards;
 }
 
 fn edgesWithoutPiece(f: usize, r: usize) u64 {
@@ -103,7 +85,7 @@ fn edgesWithoutPiece(f: usize, r: usize) u64 {
     // zig fmt: on
 }
 
-fn bbRay(bb: u64, s: Square, dir: Direction) u64 {
+pub fn bbRay(bb: u64, s: Square, dir: Direction) u64 {
     var file: usize = s.file();
     var rank: usize = s.rank();
 

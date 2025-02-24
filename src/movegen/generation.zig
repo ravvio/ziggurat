@@ -9,7 +9,7 @@ const Square = chess.Square;
 const chessmove = chess.chessmove;
 const ChessMove = chess.ChessMove;
 const Board = chess.Board;
-const MoveGenTables = @import("tables.zig").MoveGenTables;
+const tables = @import("tables.zig");
 
 pub const MoveType = enum {
     All,
@@ -18,7 +18,6 @@ pub const MoveType = enum {
 };
 
 pub fn genMovesPseudolegal(
-    mg: *const MoveGenTables,
     white: bool,
     comptime movetype: MoveType,
     board: *const Board,
@@ -29,15 +28,15 @@ pub fn genMovesPseudolegal(
     const not_friends = ~board.friends(white);
     const occupied = board.occupied;
 
-    generateKing(mg, board, movelist, white, movetype, ksq, occupied, enemies, not_friends);
-    generateQueen(mg, board, movelist, white, movetype, occupied, enemies, not_friends);
-    generateRook(mg, board, movelist, white, movetype, occupied, enemies, not_friends);
-    generateBishop(mg, board, movelist, white, movetype, occupied, enemies, not_friends);
-    generateKnight(mg, board, movelist, white, movetype, occupied, enemies, not_friends);
-    generatePawns(mg, board, movelist, white, movetype, occupied, enemies);
+    generateKing(board, movelist, white, movetype, ksq, occupied, enemies, not_friends);
+    generateQueen(board, movelist, white, movetype, occupied, enemies, not_friends);
+    generateRook(board, movelist, white, movetype, occupied, enemies, not_friends);
+    generateBishop(board, movelist, white, movetype, occupied, enemies, not_friends);
+    generateKnight(board, movelist, white, movetype, occupied, enemies, not_friends);
+    generatePawns(board, movelist, white, movetype, occupied, enemies);
 
     if (movetype == MoveType.All or movetype == MoveType.Quiet) {
-        generateCastling(mg, board, movelist, white, ksq, occupied);
+        generateCastling(board, movelist, white, ksq, occupied);
     }
 }
 
@@ -98,41 +97,41 @@ fn movesFromType(comptime movetype: MoveType, targets: u64, not_friends: u64, oc
     };
 }
 
-fn generateCastling(mg: *const MoveGenTables, board: *const Board, movelist: *Movelist(ChessMove), white: bool, ksq: usize, occupied: u64) void {
+fn generateCastling(board: *const Board, movelist: *Movelist(ChessMove), white: bool, ksq: usize, occupied: u64) void {
     // This we can probably chanche
     // if we are in check we are generating way too many moves
-    if (squareAttacked(mg, board, white, ksq, occupied)) {
+    if (squareAttacked(board, white, ksq, occupied)) {
         return;
     }
     if (white) {
         if (board.state.castling.x & chess.CastlingRights.WK.x > chess.CastlingRights.ZERO.x //
         and (bitboard.SQUARES[Square.F1.x] | bitboard.SQUARES[Square.G1.x]) & occupied == 0 //
-        and !squareAttacked(mg, board, white, Square.F1.x, occupied) //
-        and !squareAttacked(mg, board, white, Square.G1.x, occupied) //
+        and !squareAttacked(board, white, Square.F1.x, occupied) //
+        and !squareAttacked(board, white, Square.G1.x, occupied) //
         ) {
             // todo: This is a single move, we can cache it
             addToMovelist(white, pieces.KING, movelist, board, ksq, bitboard.SQUARES[Square.G1.x]);
         }
         if (board.state.castling.x & chess.CastlingRights.WQ.x > chess.CastlingRights.ZERO.x //
         and (bitboard.SQUARES[Square.B1.x] | bitboard.SQUARES[Square.C1.x] | bitboard.SQUARES[Square.D1.x]) & occupied == 0 //
-        and !squareAttacked(mg, board, white, Square.C1.x, occupied) //
-        and !squareAttacked(mg, board, white, Square.D1.x, occupied) //
+        and !squareAttacked(board, white, Square.C1.x, occupied) //
+        and !squareAttacked(board, white, Square.D1.x, occupied) //
         ) {
             addToMovelist(white, pieces.KING, movelist, board, ksq, bitboard.SQUARES[Square.C1.x]);
         }
     } else {
         if (board.state.castling.x & chess.CastlingRights.BK.x > chess.CastlingRights.ZERO.x //
         and (bitboard.SQUARES[Square.F8.x] | bitboard.SQUARES[Square.G8.x]) & occupied == 0 //
-        and !squareAttacked(mg, board, white, Square.F8.x, occupied) //
-        and !squareAttacked(mg, board, white, Square.G8.x, occupied) //
+        and !squareAttacked(board, white, Square.F8.x, occupied) //
+        and !squareAttacked(board, white, Square.G8.x, occupied) //
         ) {
             // todo: This is a single move, we can cache it
             addToMovelist(white, pieces.KING, movelist, board, ksq, bitboard.SQUARES[Square.G8.x]);
         }
         if (board.state.castling.x & chess.CastlingRights.BQ.x > chess.CastlingRights.ZERO.x //
         and (bitboard.SQUARES[Square.B8.x] | bitboard.SQUARES[Square.C8.x] | bitboard.SQUARES[Square.D8.x]) & occupied == 0 //
-        and !squareAttacked(mg, board, white, Square.C8.x, occupied) //
-        and !squareAttacked(mg, board, white, Square.D8.x, occupied) //
+        and !squareAttacked(board, white, Square.C8.x, occupied) //
+        and !squareAttacked(board, white, Square.D8.x, occupied) //
         ) {
             addToMovelist(white, pieces.KING, movelist, board, ksq, bitboard.SQUARES[Square.C8.x]);
         }
@@ -140,7 +139,6 @@ fn generateCastling(mg: *const MoveGenTables, board: *const Board, movelist: *Mo
 }
 
 fn generateKing(
-    mg: *const MoveGenTables,
     board: *const Board,
     movelist: *Movelist(ChessMove),
     white: bool,
@@ -150,7 +148,7 @@ fn generateKing(
     enemies: u64,
     not_friends: u64,
 ) void {
-    const targets = mg.kingAttacks(ksq);
+    const targets = tables.kingAttacks(ksq);
     const m = movesFromType(
         movetype,
         targets,
@@ -162,7 +160,6 @@ fn generateKing(
 }
 
 fn generateQueen(
-    mg: *const MoveGenTables,
     board: *const Board,
     movelist: *Movelist(ChessMove),
     white: bool,
@@ -175,7 +172,7 @@ fn generateQueen(
 
     var biter = chess.bitboard.BitboardIterator{ .u = queens };
     while (biter.next()) |sq| {
-        const targets = mg.queenAttacks(sq, occupied);
+        const targets = tables.queenAttacks(sq, occupied);
         const m = movesFromType(
             movetype,
             targets,
@@ -188,7 +185,6 @@ fn generateQueen(
 }
 
 fn generateRook(
-    mg: *const MoveGenTables,
     board: *const Board,
     movelist: *Movelist(ChessMove),
     white: bool,
@@ -201,7 +197,7 @@ fn generateRook(
 
     var biter = chess.bitboard.BitboardIterator{ .u = rooks };
     while (biter.next()) |sq| {
-        const targets = mg.rookAttacks(sq, occupied);
+        const targets = tables.rookAttacks(sq, occupied);
         const m = movesFromType(
             movetype,
             targets,
@@ -214,7 +210,6 @@ fn generateRook(
 }
 
 fn generateBishop(
-    mg: *const MoveGenTables,
     board: *const Board,
     movelist: *Movelist(ChessMove),
     white: bool,
@@ -227,7 +222,7 @@ fn generateBishop(
 
     var biter = chess.bitboard.BitboardIterator{ .u = bishops };
     while (biter.next()) |sq| {
-        const targets = mg.bishopAttacks(sq, occupied);
+        const targets = tables.bishopAttacks(sq, occupied);
         const m = movesFromType(
             movetype,
             targets,
@@ -240,7 +235,6 @@ fn generateBishop(
 }
 
 pub fn generateKnight(
-    mg: *const MoveGenTables,
     board: *const Board,
     movelist: *Movelist(ChessMove),
     white: bool,
@@ -253,7 +247,7 @@ pub fn generateKnight(
 
     var biter = chess.bitboard.BitboardIterator{ .u = knights };
     while (biter.next()) |sq| {
-        const targets = mg.knightAttacks(sq);
+        const targets = tables.knightAttacks(sq);
         const m = movesFromType(
             movetype,
             targets,
@@ -266,7 +260,6 @@ pub fn generateKnight(
 }
 
 pub fn generatePawns(
-    mg: *const MoveGenTables,
     board: *const Board,
     movelist: *Movelist(ChessMove),
     white: bool,
@@ -294,7 +287,7 @@ pub fn generatePawns(
         }
         // Captures
         if (movetype == MoveType.All or movetype == MoveType.Capture) {
-            const attacks = mg.pawnAttacks(white, sq);
+            const attacks = tables.pawnAttacks(white, sq);
             if (board.state.en_passant) |en| {
                 targets |= (attacks & (enemies | bitboard.SQUARES[en.x]));
             } else {
@@ -307,18 +300,17 @@ pub fn generatePawns(
 }
 
 pub fn squareAttacked(
-    mg: *const MoveGenTables,
     board: *const Board,
     color: bool,
     sq: usize,
     occupied: u64,
 ) bool {
     const attacker = @intFromBool(!color);
-    return (board.boards[attacker][pieces.KING] & mg.kingAttacks(sq) != 0 //
-    or board.boards[attacker][pieces.QUEEN] & mg.queenAttacks(sq, occupied) != 0 //
-    or board.boards[attacker][pieces.ROOK] & mg.rookAttacks(sq, occupied) != 0 //
-    or board.boards[attacker][pieces.BISHOP] & mg.bishopAttacks(sq, occupied) != 0 //
-    or board.boards[attacker][pieces.KNIGHT] & mg.knightAttacks(sq) != 0 //
-    or board.boards[attacker][pieces.PAWN] & mg.pawnAttacks(color, sq) != 0 //
+    return (board.boards[attacker][pieces.KING] & tables.kingAttacks(sq) != 0 //
+    or board.boards[attacker][pieces.QUEEN] & tables.queenAttacks(sq, occupied) != 0 //
+    or board.boards[attacker][pieces.ROOK] & tables.rookAttacks(sq, occupied) != 0 //
+    or board.boards[attacker][pieces.BISHOP] & tables.bishopAttacks(sq, occupied) != 0 //
+    or board.boards[attacker][pieces.KNIGHT] & tables.knightAttacks(sq) != 0 //
+    or board.boards[attacker][pieces.PAWN] & tables.pawnAttacks(color, sq) != 0 //
     );
 }

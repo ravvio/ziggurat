@@ -7,7 +7,7 @@ const Square = chess.Square;
 const pieces = chess.constants.pieces;
 const movegen = @import("../movegen.zig");
 
-pub fn parseMove(mg: *movegen.MoveGenTables, b: *Board, uci: []const u8) ChessError!ChessMove {
+pub fn parseMove(b: *Board, uci: []const u8) ChessError!ChessMove {
     if (uci.len != 4 and uci.len != 5) {
         return ChessError.InvalidMove;
     }
@@ -24,7 +24,6 @@ pub fn parseMove(mg: *movegen.MoveGenTables, b: *Board, uci: []const u8) ChessEr
 
     // Deterine if the move is pseudo legal
     movegen.generation.genMovesPseudolegal(
-        mg,
         b.state.current_side,
         movegen.MoveType.All,
         b,

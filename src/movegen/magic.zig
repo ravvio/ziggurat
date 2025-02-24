@@ -5,8 +5,7 @@ pub const Magic = struct {
     nr: u64,
 
     pub fn getIndex(m: Magic, occupied: u64) usize {
-        const blockerboard: u64 = occupied & m.mask;
-        return ((blockerboard *% m.nr) >> m.shift) + m.offset;
+        return (((occupied & m.mask) *% m.nr) >> m.shift) + m.offset;
     }
 };
 
