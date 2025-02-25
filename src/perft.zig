@@ -62,10 +62,10 @@ pub fn perftDivide(
         const leaves = perft(board, !color, depth - 1);
         total += leaves;
         board.unmakeMove(color);
-        std.debug.print("{} - {}\n", .{ move, leaves });
+        std.debug.print("{}: {}\n", .{ move, leaves });
     }
 
-    std.debug.print("Total {}\n", .{total});
+    std.debug.print("Total: {}\n", .{total});
     return total;
 }
 
@@ -79,13 +79,13 @@ test "perft startpos" {
     var board = try chess.Board.fromFen(alloc, chess.constants.Fen.STARTPOS);
     defer board.deinit();
 
-    var res = perft(&board, 1);
+    var res = perft(&board, true, 1);
     try std.testing.expectEqual(20, res);
-    res = perft(&board, 2);
+    res = perft(&board, true, 2);
     try std.testing.expectEqual(400, res);
-    res = perft(&board, 3);
+    res = perft(&board, true, 3);
     try std.testing.expectEqual(8_902, res);
-    res = perft(&board, 4);
+    res = perft(&board, true, 4);
     try std.testing.expectEqual(197_281, res);
     // res = perft(&board, 5);
     // try std.testing.expectEqual(4_865_609, res);
@@ -103,13 +103,13 @@ test "perft kiwipete" {
     var board = try chess.Board.fromFen(alloc, chess.constants.Fen.KIWIPETE);
     defer board.deinit();
 
-    var res = perft(&board, 1);
+    var res = perft(&board, true, 1);
     try std.testing.expectEqual(48, res);
-    res = perft(&board, 2);
+    res = perft(&board, true, 2);
     try std.testing.expectEqual(2_039, res);
-    res = perft(&board, 3);
+    res = perft(&board, true, 3);
     try std.testing.expectEqual(97_862, res);
-    res = perft(&board, 4);
+    res = perft(&board, true, 4);
     try std.testing.expectEqual(4_085_603, res);
     // res = perft(&board, 5);
     // try std.testing.expectEqual(193_690_690, res);

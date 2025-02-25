@@ -14,6 +14,14 @@ pub fn Movelist(comptime T: type) type {
             };
         }
 
+        pub fn pop(m: *Movelist(T)) ?T {
+            if (m.count == 0) {
+                return null;
+            }
+            m.count -= 1;
+            return m.list[m.count];
+        }
+
         pub fn add(m: *Movelist(T), item: T) void {
             assert(m.count < common.MAX_PSEUDO_MOVES);
             m.list[m.count] = item;
