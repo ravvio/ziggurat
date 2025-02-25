@@ -1,6 +1,8 @@
 pub const constants = @import("chess/constants.zig");
 pub const bitboard = @import("chess/bitboard.zig");
 
+pub const tables = @import("chess/tables.zig");
+
 pub const ChessError = @import("chess/errors.zig").ChessError;
 
 pub const Square = @import("chess/square.zig").Square;

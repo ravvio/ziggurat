@@ -17,29 +17,29 @@ const std = @import("std");
 const Square = @import("square.zig").Square;
 const pieces = @import("constants.zig").pieces;
 
-pub const shift = struct {
-    pub const PIECE: usize = 0;
-    pub const FROM: usize = 3;
-    pub const TO: usize = 9;
-    pub const CAPTURE: usize = 15;
-    pub const PROMOTION: usize = 18;
-    pub const ENPASSANT: usize = 21;
-    pub const DOUBLE_STEP: usize = 22;
-    pub const CASTLING: usize = 23;
-    pub const SORT: usize = 24;
-};
-
-const bits = struct {
-    pub const ONE: usize = 0b1;
-    pub const THREE: usize = 0b111;
-    pub const SIX: usize = 0b111111;
-    pub const EIGHT: usize = 0b11111111;
-    pub const MOVEMASK: usize = 0x00_00_00_00_00_FF_FF_FF;
-    pub const SORTMASK: usize = bits.EIGHT << bits.SORT;
-};
-
 pub const ChessMove = struct {
     x: usize,
+
+    const bits = struct {
+        pub const ONE: usize = 0b1;
+        pub const THREE: usize = 0b111;
+        pub const SIX: usize = 0b111111;
+        pub const EIGHT: usize = 0b11111111;
+        pub const MOVEMASK: usize = 0x00_00_00_00_00_FF_FF_FF;
+        pub const SORTMASK: usize = bits.EIGHT << bits.SORT;
+    };
+
+    pub const shift = struct {
+        pub const PIECE: usize = 0;
+        pub const FROM: usize = 3;
+        pub const TO: usize = 9;
+        pub const CAPTURE: usize = 15;
+        pub const PROMOTION: usize = 18;
+        pub const ENPASSANT: usize = 21;
+        pub const DOUBLE_STEP: usize = 22;
+        pub const CASTLING: usize = 23;
+        pub const SORT: usize = 24;
+    };
 
     pub fn format(
         move: ChessMove,

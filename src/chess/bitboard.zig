@@ -18,6 +18,10 @@ pub fn debugPrint(b: u64) void {
 pub const BitboardIterator = struct {
     u: u64,
 
+    pub fn new(u: u64) BitboardIterator {
+        return .{ .u = u };
+    }
+
     pub fn next(self: *BitboardIterator) ?usize {
         if (self.u == 0) {
             return null;

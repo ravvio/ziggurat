@@ -1,5 +1,11 @@
 const ChessError = @import("errors.zig").ChessError;
 
+pub const MoveType = enum {
+    All,
+    Quiet,
+    Capture,
+};
+
 pub const Fen = struct {
     pub const STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     pub const KIWIPETE = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
@@ -79,6 +85,6 @@ pub const pieces = struct {
     }
 };
 
-pub const MAX_PSEUDO_MOVES: usize = 512;
 pub const MAX_LEGAL_MOVES: usize = 218;
+pub const MAX_PSEUDO_MOVES: usize = 512;
 pub const MAX_GAME_MOVES: usize = 2048;

@@ -1,7 +1,6 @@
 const zbench = @import("zbench");
 const std = @import("std");
 const chess = @import("chess.zig");
-const movegen = @import("movegen.zig");
 const testing = std.testing;
 
 const movelist = @import("./benches/movelist.zig");
@@ -10,7 +9,7 @@ const math = @import("./benches/math.zig");
 const perft = @import("./benches/perft.zig");
 
 pub fn main() !void {
-    movegen.tables.initAll();
+    chess.tables.initAll();
 
     const stdout = std.io.getStdOut().writer();
     var bench = zbench.Benchmark.init(std.heap.page_allocator, .{});

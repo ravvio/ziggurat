@@ -1,7 +1,5 @@
 const std = @import("std");
-const movegen = @import("./movegen.zig");
 const chess = @import("./chess.zig");
-const legal = @import("./legality.zig");
 
 pub fn perft(
     board: *chess.Board,
@@ -16,17 +14,16 @@ pub fn perft(
     var ml = chess.Movelist(chess.ChessMove).new();
     var total: u64 = 0;
 
-    movegen.generation.genMovesPseudolegal(
+    board.generatePseudolegalMoves(
+        chess.constants.MoveType.All,
         color,
-        movegen.MoveType.All,
-        board,
         &ml,
     );
 
     var i: usize = 0;
     while (i < ml.count) : (i += 1) {
         board.makeMove(ml.list[i]);
-        if (legal.isKingAttacked(color, board)) {
+        if (board.isKingAttacked(color)) {
             board.unmakeMove();
             continue;
         }
@@ -49,10 +46,9 @@ pub fn perftDivide(
     var ml = chess.Movelist(chess.ChessMove).new();
     var total: u64 = 0;
 
-    movegen.generation.genMovesPseudolegal(
+    board.generatePseudolegalMoves(
+        chess.constants.MoveType.All,
         color,
-        movegen.MoveType.All,
-        board,
         &ml,
     );
 
@@ -60,7 +56,7 @@ pub fn perftDivide(
     while (i < ml.count) : (i += 1) {
         const move = ml.list[i];
         board.makeMove(move);
-        if (legal.isKingAttacked(color, board)) {
+        if (board.isKingAttacked(color)) {
             board.unmakeMove();
             continue;
         }
@@ -75,7 +71,7 @@ pub fn perftDivide(
 }
 
 test "perft startpos" {
-    movegen.tables.initAll();
+    chess.tables.initAll();
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -99,7 +95,7 @@ test "perft startpos" {
 }
 
 test "perft kiwipete" {
-    movegen.tables.initAll();
+    chess.tables.initAll();
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();

@@ -3,5 +3,6 @@ pub const ChessError = error{
     InvalidPromotionPiece,
     InvalidMove,
     InvalidAlgebraicSquare,
+    InvalidFen,
     NonPseudolegalMove,
 };

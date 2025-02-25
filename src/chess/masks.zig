@@ -1,78 +1,9 @@
-const std = @import("std");
-const ArrayList = std.ArrayList;
-
-const Magic = @import("magic.zig").Magic;
-
-const chess = @import("../chess.zig");
-const bitboard = chess.bitboard;
-const Square = chess.Square;
-const Direction = chess.constants.Direction;
-const ranks = chess.constants.ranks;
-const files = chess.constants.files;
-
-pub fn rookMask(s: Square) u64 {
-    const file = s.file();
-    const rank = s.rank();
-    const bb_rook_square = bitboard.SQUARES[s.x];
-    const bb_edges = edgesWithoutPiece(file, rank);
-    const bb_mask = bitboard.FILES[file] | bitboard.RANKS[rank];
-
-    const r = bb_mask & ~bb_edges & ~bb_rook_square;
-    return r;
-}
-
-pub fn bishopMask(s: Square) u64 {
-    const file = s.file();
-    const rank = s.rank();
-    const bb_edges = edgesWithoutPiece(file, rank);
-
-    var bb_rays = bbRay(bitboard.EMPTY, s, Direction.UpRight);
-    bb_rays |= bbRay(bitboard.EMPTY, s, Direction.UpLeft);
-    bb_rays |= bbRay(bitboard.EMPTY, s, Direction.DownRight);
-    bb_rays |= bbRay(bitboard.EMPTY, s, Direction.DownLeft);
-
-    return bb_rays & ~bb_edges;
-}
-
-pub fn rookAttackBoards(
-    s: Square,
-    blockers: *const [64]u64,
-) [64]u64 {
-    var attack_boards = std.mem.zeroes([64]u64);
-    var i: usize = 0;
-    for (blockers) |b| {
-        // zig fmt: off
-        attack_boards[i] = (
-            bbRay(b, s, Direction.Up)
-            | bbRay(b, s, Direction.Right)
-            | bbRay(b, s, Direction.Down)
-            | bbRay(b, s, Direction.Left)
-        );
-        i += 1;
-        // zig fmt: on
-    }
-    return attack_boards;
-}
-
-pub fn bishopAttackBoards(
-    s: Square,
-    blockers: *const [64]u64,
-) [64]u64 {
-    var attack_boards = std.mem.zeroes([64]u64);
-    var i: usize = 0;
-    for (blockers) |b| {
-        // zig fmt: off
-        attack_boards[i] = (
-            bbRay(b, s, Direction.UpLeft)
-            | bbRay(b, s, Direction.UpRight)
-            | bbRay(b, s, Direction.DownLeft)
-            | bbRay(b, s, Direction.DownRight)
-        );
-        i += 1;
-        // zig fmt: on
-    }
-    return attack_boards;
-}
+const Square = @import("square.zig").Square;
+const bitboard = @import("bitboard.zig");
+const constants = @import("constants.zig");
+const Direction = constants.Direction;
+const ranks = constants.ranks;
+const files = constants.files;
 
 fn edgesWithoutPiece(f: usize, r: usize) u64 {
     const nbb_file = ~bitboard.FILES[f];
@@ -152,4 +83,28 @@ pub fn bbRay(bb: u64, s: Square, dir: Direction) u64 {
         }
     }
     return bb_ray;
+}
+
+pub fn rookMask(s: Square) u64 {
+    const file = s.file();
+    const rank = s.rank();
+    const bb_rook_square = bitboard.SQUARES[s.x];
+    const bb_edges = edgesWithoutPiece(file, rank);
+    const bb_mask = bitboard.FILES[file] | bitboard.RANKS[rank];
+
+    const r = bb_mask & ~bb_edges & ~bb_rook_square;
+    return r;
+}
+
+pub fn bishopMask(s: Square) u64 {
+    const file = s.file();
+    const rank = s.rank();
+    const bb_edges = edgesWithoutPiece(file, rank);
+
+    var bb_rays = bbRay(bitboard.EMPTY, s, Direction.UpRight);
+    bb_rays |= bbRay(bitboard.EMPTY, s, Direction.UpLeft);
+    bb_rays |= bbRay(bitboard.EMPTY, s, Direction.DownRight);
+    bb_rays |= bbRay(bitboard.EMPTY, s, Direction.DownLeft);
+
+    return bb_rays & ~bb_edges;
 }

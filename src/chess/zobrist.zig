@@ -1,12 +1,12 @@
 const std = @import("std");
 
-const SEED: u64 = 4081030931237;
+const SEED: u64 = 0x31_18_9e_a9_c1_97_0a_ef;
 
 pub const ZobristValues = struct {
     pieces: [2][6][64]u64,
     castling: [16]u64,
     color: u64,
-    en_passant: [65]u64,
+    en_passant: [64]u64,
 
     pub fn new() ZobristValues {
         var rand = std.rand.DefaultPrng.init(SEED);
