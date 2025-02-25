@@ -228,12 +228,19 @@ pub const Board = struct {
         var ml = MoveList(ChessMove).new();
 
         // Deterine if the move is pseudo legal
-        b.isKingAttacked(
-            b.state.current_side,
-            constants.MoveType.All,
-            b,
-            &ml,
-        );
+        if (b.state.current_side) {
+            b.generatePseudolegalMoves(
+                constants.MoveType.All,
+                true,
+                &ml,
+            );
+        } else {
+            b.generatePseudolegalMoves(
+                constants.MoveType.All,
+                false,
+                &ml,
+            );
+        }
 
         var i: usize = 0;
         while (i < ml.count) : (i += 1) {

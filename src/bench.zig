@@ -7,6 +7,7 @@ const movelist = @import("./benches/movelist.zig");
 const board = @import("./benches/board.zig");
 const math = @import("./benches/math.zig");
 const perft = @import("./benches/perft.zig");
+const eval = @import("./benches/eval.zig");
 
 pub fn main() !void {
     chess.tables.initAll();
@@ -47,6 +48,17 @@ pub fn main() !void {
     try bench.addParam(
         "Perft4 kiwipete",
         &perft.PerftBench.init(chess.constants.Fen.KIWIPETE, 4),
+        .{},
+    );
+
+    try bench.addParam(
+        "Eval2 startpos",
+        &eval.EvalBench.init(chess.constants.Fen.STARTPOS, 2),
+        .{},
+    );
+    try bench.addParam(
+        "Eval4 startpos",
+        &eval.EvalBench.init(chess.constants.Fen.STARTPOS, 4),
         .{},
     );
 
