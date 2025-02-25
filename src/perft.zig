@@ -3,13 +3,12 @@ const chess = @import("./chess.zig");
 
 pub fn perft(
     board: *chess.Board,
+    comptime color: bool,
     depth: i8,
 ) u64 {
     if (depth == 0) {
         return 1;
     }
-
-    const color = board.state.current_side;
 
     var ml = chess.Movelist(chess.ChessMove).new();
     var total: u64 = 0;
@@ -22,13 +21,13 @@ pub fn perft(
 
     var i: usize = 0;
     while (i < ml.count) : (i += 1) {
-        board.makeMove(ml.list[i]);
+        board.makeMove(ml.list[i], color);
         if (board.isKingAttacked(color)) {
-            board.unmakeMove();
+            board.unmakeMove(color);
             continue;
         }
-        total += perft(board, depth - 1);
-        board.unmakeMove();
+        total += perft(board, !color, depth - 1);
+        board.unmakeMove(color);
     }
 
     return total;
@@ -36,13 +35,13 @@ pub fn perft(
 
 pub fn perftDivide(
     board: *chess.Board,
+    comptime color: bool,
     depth: i8,
 ) u64 {
     if (depth == 0) {
         return 1;
     }
 
-    const color = board.state.current_side;
     var ml = chess.Movelist(chess.ChessMove).new();
     var total: u64 = 0;
 
@@ -55,14 +54,14 @@ pub fn perftDivide(
     var i: usize = 0;
     while (i < ml.count) : (i += 1) {
         const move = ml.list[i];
-        board.makeMove(move);
+        board.makeMove(move, color);
         if (board.isKingAttacked(color)) {
-            board.unmakeMove();
+            board.unmakeMove(color);
             continue;
         }
-        const leaves = perft(board, depth - 1);
+        const leaves = perft(board, !color, depth - 1);
         total += leaves;
-        board.unmakeMove();
+        board.unmakeMove(color);
         std.debug.print("{} - {}\n", .{ move, leaves });
     }
 

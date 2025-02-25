@@ -208,15 +208,11 @@ pub const Board = struct {
         return b;
     }
 
-    pub fn deinit(
-        b: *Board,
-    ) void {
+    pub fn deinit(b: *Board) void {
         b.history.deinit();
     }
 
-    pub fn regenerateZobrist(
-        b: *Board,
-    ) void {
+    pub fn regenerateZobrist(b: *Board) void {
         var z: u64 = 0;
         // Pieces
         var iterator_w = bb.BitboardIterator{ .u = b.colors[0] };
@@ -243,11 +239,12 @@ pub const Board = struct {
         b.state.zobrist_key = z;
     }
 
-    // Makes a move on the board.
-    // This method does not checks the legality
+    /// Makes a move on the board.
+    /// This method does not checks the legality
     pub fn makeMove(
         b: *Board,
         move: ChessMove,
+        comptime color: bool,
     ) void {
         // Store unmake info
         var state = b.state;
@@ -257,7 +254,6 @@ pub const Board = struct {
         };
 
         // Shorthands
-        const color = b.state.current_side;
         const capture = move.capture();
         const piece = move.piece();
         const from = move.from();
@@ -329,11 +325,12 @@ pub const Board = struct {
         }
     }
 
-    pub fn unmakeMove(b: *Board) void {
+    /// Unmake a move.
+    /// The color is the side after the undo
+    pub fn unmakeMove(b: *Board, comptime color: bool) void {
         b.state = b.history.pop();
 
         // Shorthands
-        const color = b.state.current_side;
         const move = b.state.next_move;
         const piece = move.piece();
         const from = move.from();
@@ -382,15 +379,12 @@ pub const Board = struct {
         b.state.en_passant = null;
     }
 
-    pub fn setEnPassant(
-        b: *Board,
-        sq: usize,
-    ) void {
+    pub fn setEnPassant(b: *Board, sq: usize) void {
         b.state.en_passant = Square.new(sq);
         b.state.zobrist_key ^= b.zobrist_values.en_passant[sq];
     }
 
-    pub fn removePiece(b: *Board, color: bool, piece: usize, sq: usize) void {
+    pub fn removePiece(b: *Board, comptime color: bool, piece: usize, sq: usize) void {
         const tmp = bb.SQUARES[sq];
         b.boards[@intFromBool(color)][piece] ^= tmp;
         b.colors[@intFromBool(color)] ^= tmp;
@@ -398,7 +392,7 @@ pub const Board = struct {
         b.state.zobrist_key ^= b.zobrist_values.pieces[@intFromBool(color)][piece][sq];
     }
 
-    pub fn addPiece(b: *Board, color: bool, piece: usize, sq: usize) void {
+    pub fn addPiece(b: *Board, comptime color: bool, piece: usize, sq: usize) void {
         const tmp = bb.SQUARES[sq];
         b.boards[@intFromBool(color)][piece] |= tmp;
         b.colors[@intFromBool(color)] |= tmp;
@@ -406,7 +400,7 @@ pub const Board = struct {
         b.state.zobrist_key ^= b.zobrist_values.pieces[@intFromBool(color)][piece][sq];
     }
 
-    pub fn movePiece(b: *Board, color: bool, piece: usize, from: usize, to: usize) void {
+    pub fn movePiece(b: *Board, comptime color: bool, piece: usize, from: usize, to: usize) void {
         const bf = bb.SQUARES[from];
         const bt = bb.SQUARES[to];
         const board = &b.boards[@intFromBool(color)][piece];
@@ -423,21 +417,21 @@ pub const Board = struct {
     // so we need some different methods for undoing adding and removing pieces
     // so to not interfere with already restored values
 
-    pub fn undoAddPiece(b: *Board, color: bool, piece: usize, sq: usize) void {
+    pub fn undoAddPiece(b: *Board, comptime color: bool, piece: usize, sq: usize) void {
         const tmp = bb.SQUARES[sq];
         b.boards[@intFromBool(color)][piece] ^= tmp;
         b.colors[@intFromBool(color)] ^= tmp;
         b.pieces[sq] = constants.pieces.NONE;
     }
 
-    pub fn undoRemovePiece(b: *Board, color: bool, piece: usize, sq: usize) void {
+    pub fn undoRemovePiece(b: *Board, comptime color: bool, piece: usize, sq: usize) void {
         const tmp = bb.SQUARES[sq];
         b.boards[@intFromBool(color)][piece] |= tmp;
         b.colors[@intFromBool(color)] |= tmp;
         b.pieces[sq] = piece;
     }
 
-    pub fn undoMovePiece(b: *Board, color: bool, piece: usize, from: usize, to: usize) void {
+    pub fn undoMovePiece(b: *Board, comptime color: bool, piece: usize, from: usize, to: usize) void {
         const tmpFrom = bb.SQUARES[from];
         const tmpTo = bb.SQUARES[to];
         const tmp = &b.boards[@intFromBool(color)][piece];
@@ -454,41 +448,38 @@ pub const Board = struct {
         b.state.zobrist_key ^= b.zobrist_values.castling[new];
     }
 
-    pub fn kingSquare(
-        b: *const Board,
-        white: bool,
-    ) Square {
-        return Square.new(@ctz(b.boards[@intFromBool(white)][0]));
+    pub fn kingSquare(b: *const Board, comptime color: bool) Square {
+        return Square.new(@ctz(b.boards[@intFromBool(color)][0]));
     }
 
-    pub fn queens(b: *const Board, white: bool) u64 {
-        return b.boards[@intFromBool(white)][1];
+    pub fn queens(b: *const Board, comptime color: bool) u64 {
+        return b.boards[@intFromBool(color)][1];
     }
 
-    pub fn rooks(b: *const Board, white: bool) u64 {
-        return b.boards[@intFromBool(white)][2];
+    pub fn rooks(b: *const Board, comptime color: bool) u64 {
+        return b.boards[@intFromBool(color)][2];
     }
 
-    pub fn bishops(b: *const Board, white: bool) u64 {
-        return b.boards[@intFromBool(white)][3];
+    pub fn bishops(b: *const Board, comptime color: bool) u64 {
+        return b.boards[@intFromBool(color)][3];
     }
 
-    pub fn knights(b: *const Board, white: bool) u64 {
-        return b.boards[@intFromBool(white)][4];
+    pub fn knights(b: *const Board, comptime color: bool) u64 {
+        return b.boards[@intFromBool(color)][4];
     }
 
-    pub fn pawns(b: *const Board, white: bool) u64 {
-        return b.boards[@intFromBool(white)][5];
+    pub fn pawns(b: *const Board, comptime color: bool) u64 {
+        return b.boards[@intFromBool(color)][5];
     }
 
-    pub fn friends(b: *const Board, white: bool) u64 {
-        return b.colors[@intFromBool(white)];
+    pub fn friends(b: *const Board, comptime color: bool) u64 {
+        return b.colors[@intFromBool(color)];
     }
 
     pub fn generatePseudolegalMoves(
         b: *const Board,
         comptime movetype: MoveType,
-        color: bool,
+        comptime color: bool,
         movelist: *MoveList(ChessMove),
     ) void {
         // const us = @intFromBool(color);
@@ -626,11 +617,7 @@ pub const Board = struct {
         addToMovelist(color, pieces.KING, movelist, b, ksq, targets);
     }
 
-    pub fn squareAttacked(
-        b: *const Board,
-        color: bool,
-        sq: usize,
-    ) bool {
+    pub fn squareAttacked(b: *const Board, comptime color: bool, sq: usize) bool {
         const attacker = @intFromBool(!color);
         return (b.boards[attacker][pieces.KING] & tables.kingAttacks(sq) != 0 //
         or b.boards[attacker][pieces.QUEEN] & tables.queenAttacks(sq, b.occupied) != 0 //
@@ -641,7 +628,7 @@ pub const Board = struct {
         );
     }
 
-    pub fn isKingAttacked(b: *const Board, color: bool) bool {
+    pub fn isKingAttacked(b: *const Board, comptime color: bool) bool {
         const occupied = b.occupied;
         const attacker = @intFromBool(!color);
         const sq = @ctz(b.boards[@intFromBool(color)][pieces.KING]);
@@ -655,7 +642,7 @@ pub const Board = struct {
 };
 
 fn addToMovelist(
-    white: bool,
+    comptime color: bool,
     comptime piece: usize,
     movelist: *MoveList(ChessMove),
     board: *const Board,
@@ -671,7 +658,7 @@ fn addToMovelist(
         // Pawn stuff
         var promotion: bool = false;
         if (piece == pieces.PAWN) {
-            promotion = switch (white) {
+            promotion = switch (color) {
                 true => bb.SQUARES[sq] & bb.RANK_8 != bb.EMPTY,
                 false => bb.SQUARES[sq] & bb.RANK_1 != bb.EMPTY,
             };

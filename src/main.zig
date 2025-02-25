@@ -23,5 +23,9 @@ pub fn main() !void {
     // move = try uci.parseMove(&board, "e8d7");
     // board.makeMove(move);
 
-    _ = perft.perftDivide(&board, 5);
+    if (board.state.current_side) {
+        _ = perft.perftDivide(&board, true, 5);
+    } else {
+        _ = perft.perftDivide(&board, true, 5);
+    }
 }

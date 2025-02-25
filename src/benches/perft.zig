@@ -1,6 +1,5 @@
 const std = @import("std");
 const chess = @import("../chess.zig");
-const movegen = @import("../movegen.zig");
 const perft = @import("../perft.zig");
 
 pub const PerftBench = struct {
@@ -21,6 +20,10 @@ pub const PerftBench = struct {
         var board = chess.Board.fromFen(alloc, self.fen) catch {
             @panic("could not create bench board form fen");
         };
-        _ = perft.perft(&board, self.depth);
+        if (board.state.current_side) {
+            _ = perft.perft(&board, true, self.depth);
+        } else {
+            _ = perft.perft(&board, false, self.depth);
+        }
     }
 };
