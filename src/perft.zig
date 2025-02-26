@@ -74,7 +74,7 @@ pub fn perftDivide(
 test "perft startpos" {
     chess.tables.initAll();
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const alloc = arena.allocator();
 
@@ -98,7 +98,7 @@ test "perft startpos" {
 test "perft kiwipete" {
     chess.tables.initAll();
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const alloc = arena.allocator();
 

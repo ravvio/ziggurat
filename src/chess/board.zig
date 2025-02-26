@@ -209,14 +209,14 @@ pub const Board = struct {
         b.history.deinit();
     }
 
-    pub fn parseMove(b: *Board, uci: []const u8) ChessError!ChessMove {
-        if (uci.len != 4 and uci.len != 5) {
+    pub fn parseMove(b: *Board, str: []const u8) ChessError!ChessMove {
+        if (str.len != 4 and str.len != 5) {
             return ChessError.InvalidMove;
         }
 
-        const from = try Square.fromAlgebraic(uci[0..2]);
-        const to = try Square.fromAlgebraic(uci[2..4]);
-        const promotion = if (uci.len == 5) try pieces.from(uci[5]) else pieces.NONE;
+        const from = try Square.fromAlgebraic(str[0..2]);
+        const to = try Square.fromAlgebraic(str[2..4]);
+        const promotion = if (str.len == 5) try pieces.from(str[4]) else pieces.NONE;
 
         if (promotion != pieces.NONE and !pieces.isPromotionPiece(promotion)) {
             return ChessError.InvalidPromotionPiece;
@@ -727,6 +727,28 @@ fn addToMovelist(
             for (pieces.PROMOTION_PIECES) |p| {
                 movelist.add(ChessMove{ .x = move_data | (p << ChessMove.shift.PROMOTION) });
             }
+        }
+    }
+}
+
+test "parse moves" {
+    tables.initAll();
+
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+
+    var board = try Board.fromFen(alloc, constants.Fen.STARTPOS);
+    defer board.deinit();
+
+    const moves = "f2f4 d7d5 g1f3 g8f6 b2b3 d5d4 c1b2 c7c5 e2e3 d8a5 e3d4 c5d4 f3d4 e7e5 f1b5 f6d7 d1e2 e8d8 f4e5 a7a6 b5d7 c8d7 h1f1 f7f6 e5f6 g7f6 b1c3 f8g7 e1c1 f6f5 d4e6 d7e6 e2e6 a5e5 e6f7 e5e7 f7e7 d8e7 c3d5 e7f7 f1f5 f7g6 b2g7 g6g7 d5c7 g7g6 d1f1 a8a7 c7e6 g6h6 f5g5 h8g8 g5g8 b8d7 f1f3 d7f6 f3f6 h6h5 e6f4 h5h4 c1b1 a6a5 b1a1 a5a4 a1b1 a4b3 b1c1 b3b2 c1b1 a7a2 b1a2 b2b1b a2a1";
+    var it = std.mem.splitScalar(u8, moves, ' ');
+    while (it.next()) |str| {
+        const move = try board.parseMove(str);
+        if (board.state.current_side) {
+            board.makeMove(move, true);
+        } else {
+            board.makeMove(move, false);
         }
     }
 }
