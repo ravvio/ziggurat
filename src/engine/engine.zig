@@ -83,7 +83,7 @@ pub const Engine = struct {
         const max: u8 = if (max_depth) |max| max else max_ply - 2;
         var tdepth: u8 = 1;
         deepening: while (tdepth <= max) : (tdepth += 1) {
-            self.ply = 0;
+            self.ply = 1;
 
             const alpha = -heuristic.mate_score;
             const beta = heuristic.mate_score;
@@ -190,6 +190,17 @@ pub const Engine = struct {
         // Generate moves
         var movelist = chess.Movelist(chess.ChessMove).new();
         board.generatePseudolegalMoves(chess.constants.MoveType.All, color, &movelist);
+
+        // - Stalemate or Checkmate
+        // No move was found, if we are in check this is a checkmate
+        // otherwhise is a stalemate
+        if (movelist.count == 0) {
+            if (board.isKingAttacked(color)) {
+                return best_eval;
+            } else {
+                return 0;
+            }
+        }
 
         // Iterate all moves
         while (movelist.pop()) |move| {
