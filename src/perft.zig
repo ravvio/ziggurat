@@ -10,7 +10,7 @@ pub fn perft(
         return 1;
     }
 
-    var ml = chess.Movelist(chess.ChessMove).new();
+    var ml = chess.Movelist.new();
     var total: u64 = 0;
 
     board.generatePseudolegalMoves(
@@ -43,7 +43,7 @@ pub fn perftDivide(
         return 1;
     }
 
-    var ml = chess.Movelist(chess.ChessMove).new();
+    var ml = chess.Movelist.new();
     var total: u64 = 0;
 
     board.generatePseudolegalMoves(

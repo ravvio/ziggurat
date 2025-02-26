@@ -87,7 +87,7 @@ pub const Uci = struct {
             // Ask for idetification
             else if (std.mem.eql(u8, cmd.?, "uci")) {
                 _ = try stdout.writeAll(
-                    \\id name ziggurat
+                    \\id name ziggurat_0.1.1
                     \\id author Alessio Raviola
                     \\
                 );
@@ -301,7 +301,7 @@ fn startSearch(
     movetime: u64,
     max_depth: ?u8,
 ) void {
-    //var ml = chess.Movelist(chess.ChessMove).new();
+    //var ml = chess.Movelist.new();
     // TO TRY - check if we have only a possible move, in which case return now
     engine.max_time = movetime;
 

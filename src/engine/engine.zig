@@ -8,12 +8,11 @@ const NodeType = enum {
     Other,
 };
 
+const max_game_ply = 1024;
 const max_ply: u8 = 128;
 
 /// The Engine is the component responsible for finding the best move
 pub const Engine = struct {
-    /// Allocator provided to the engine
-    allocator: std.mem.Allocator,
     /// Should the engine not emit uci info
     quiet: bool = false,
     /// Maximum time in milliseconds
@@ -41,14 +40,24 @@ pub const Engine = struct {
     /// The current eval of the engine
     score: types.Score = 0,
 
+    /// History of hashes in the search
+    hash_history: std.ArrayList(u64),
+
     pub fn init(allocator: std.mem.Allocator) Engine {
+        const hash_history = std.ArrayList(u64).initCapacity(allocator, max_game_ply) catch unreachable;
         return .{
-            .allocator = allocator,
+            .hash_history = hash_history,
         };
     }
 
-    pub fn deinit(_: *Engine) void {
-        // TODO
+    pub fn reset(self: *Engine) void {
+        self.hash_history.clearAndFree();
+        self.nodes = 0;
+        self.best_move = chess.ChessMove{};
+    }
+
+    pub fn deinit(self: *Engine) void {
+        self.hash_history.deinit();
     }
 
     fn shouldStop(self: *Engine) bool {
@@ -72,21 +81,26 @@ pub const Engine = struct {
         var bufout = std.io.bufferedWriter(std.io.getStdOut().writer());
         var out = bufout.writer();
 
+        self.reset();
+
+        // Load history from board
+        for (board.history.items) |state| {
+            self.hash_history.append(state.zobrist_key) catch unreachable;
+        }
+
         self.stop = false;
         self.searching = true;
-        self.nodes = 0;
-        self.best_move = chess.ChessMove{};
 
         // Start a timer for reporting time taken
         self.search_timer = std.time.Timer.start() catch unreachable;
 
-        const max: u8 = if (max_depth) |max| max else max_ply - 2;
+        const max: u8 = if (max_depth) |max| @max(max, 1) else max_ply - 2;
         var tdepth: u8 = 1;
         deepening: while (tdepth <= max) : (tdepth += 1) {
-            self.ply = 1;
+            self.ply = 0;
 
-            const alpha = -heuristic.mate_score;
-            const beta = heuristic.mate_score;
+            const alpha = -heuristic.mate_score - 1;
+            const beta = heuristic.mate_score + 1;
             var score = self.score;
 
             while (true) {
@@ -160,18 +174,28 @@ pub const Engine = struct {
         alpha_: types.Score,
         beta_: types.Score,
     ) types.Score {
-
         // === STEP 1 - Preparation
-        // 1.1 - Check if we should stop
+        // - Check if we should stop
         // This is done every few nodes
-        if (self.nodes & 2047 == 0 and self.shouldStop()) {
+        if (node_type != NodeType.Root and self.nodes & 2047 == 0 and self.shouldStop()) {
             self.stop = true;
             return 0;
         }
 
-        // 1.2 - Add node
+        const zobrist_key = board.state.zobrist_key;
+
+        // - Add node
         // After this point we can consider this serched node
         self.nodes += 1;
+
+        // === STEP 2 - Preliminary checks
+
+        // - Check if the position is a draw
+        if (node_type != NodeType.Root and self.isDraw(board)) {
+            return 0;
+        }
+
+        // === STEP 3 - Search
 
         // We make use of alpha beta pruning for not searching moves that
         // would surely be discarded by our opponent.
@@ -187,8 +211,8 @@ pub const Engine = struct {
         // Start with the worst possible evaluation
         var best_eval = -heuristic.mate_score + self.ply;
 
-        // Generate moves
-        var movelist = chess.Movelist(chess.ChessMove).new();
+        // - Generate moves
+        var movelist = chess.Movelist.new();
         board.generatePseudolegalMoves(chess.constants.MoveType.All, color, &movelist);
 
         // - Stalemate or Checkmate
@@ -202,8 +226,11 @@ pub const Engine = struct {
             }
         }
 
+        // - Score moves
+        movelist.scoreMoves();
+
         // Iterate all moves
-        while (movelist.pop()) |move| {
+        while (movelist.pick()) |move| {
             // Make the move
             board.makeMove(move, color);
             // Undo if kind is attacked i.e. illegal move was made
@@ -211,8 +238,12 @@ pub const Engine = struct {
                 board.unmakeMove(color);
                 continue;
             }
-            // Evaluate the leaf
+
+            // Increment ply, add to history, ecc..
             self.ply += 1;
+            self.hash_history.append(zobrist_key) catch unreachable;
+
+            // Evaluate the leaf
             const leaf_eval = -negamax(
                 self,
                 board,
@@ -222,19 +253,20 @@ pub const Engine = struct {
                 -beta,
                 -alpha,
             );
+
+            // Undo stuff
             self.ply -= 1;
+            _ = self.hash_history.pop();
 
             // Unmake move
             board.unmakeMove(color);
 
-            // === Alpha Beta Pruning ===
+            // - Alpha Beta Pruning
             // We have found a better move
             if (leaf_eval > best_eval) {
                 best_eval = leaf_eval;
 
                 // If this is a root node, set best move
-                // TODO: if i am not mistaken we can remove
-                // the next if in this case (i.e. use an else if)
                 if (node_type == NodeType.Root) {
                     self.best_move = move;
                 }
@@ -253,6 +285,54 @@ pub const Engine = struct {
             }
         }
 
+        // - Stalemate or Checkmate
+        // No move was found, if we are in check this is a checkmate
+        // otherwhise is a stalemate
+        if (best_eval == -heuristic.mate_score) {
+            if (board.isKingAttacked(color)) {
+                best_eval += self.ply;
+            } else {
+                best_eval = 0;
+            }
+        }
+
         return best_eval;
+    }
+
+    /// Check if the position is a draw
+    fn isDraw(self: *Engine, board: *chess.Board) bool {
+        // Check for 50 moves
+        if (board.state.halfmove_clock >= 50) {
+            return true;
+        }
+
+        // TODO: check material
+
+        // Check for threefold repetition, for the engine even repeating
+        // the move one time is considered a draw position
+        // Impossible to have a 3 fold repetition before 6 ply
+        if (self.hash_history.items.len >= 6) {
+            var rep: bool = false;
+            // Start from the top, is easier that we will find a repetition there
+            var i: usize = self.hash_history.items.len - 3;
+            // We need only to check until the last pawn move
+            var limit: usize = 3;
+            if (i > board.state.halfmove_clock + 1) {
+                limit = @max(i - board.state.halfmove_clock - 1, 3);
+            }
+            // Count down by 2 given that the position must be of the right color
+            while (i >= limit) : (i -= 2) {
+                if (self.hash_history.items[i] == board.state.zobrist_key) {
+                    if (!rep) {
+                        rep = true;
+                        continue;
+                    } else {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 };

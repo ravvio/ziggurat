@@ -7,7 +7,7 @@ const CastlingRights = @import("./gamestate.zig").CastlingRights;
 const ZobristValues = @import("./zobrist.zig").ZobristValues;
 const ChessMove = @import("./chessmove.zig").ChessMove;
 const Square = @import("./square.zig").Square;
-const MoveList = @import("movelist.zig").Movelist;
+const Movelist = @import("movelist.zig").Movelist;
 const ChessError = @import("errors.zig").ChessError;
 const constants = @import("./constants.zig");
 const pieces = constants.pieces;
@@ -222,7 +222,7 @@ pub const Board = struct {
             return ChessError.InvalidPromotionPiece;
         }
 
-        var ml = MoveList(ChessMove).new();
+        var ml = Movelist.new();
 
         // Deterine if the move is pseudo legal
         if (b.state.current_side) {
@@ -520,7 +520,7 @@ pub const Board = struct {
         b: *const Board,
         comptime movetype: MoveType,
         comptime color: bool,
-        movelist: *MoveList(ChessMove),
+        movelist: *Movelist,
     ) void {
         // const us = @intFromBool(color);
         // const op = @intFromBool(!color);
@@ -685,7 +685,7 @@ pub const Board = struct {
 fn addToMovelist(
     comptime color: bool,
     comptime piece: usize,
-    movelist: *MoveList(ChessMove),
+    movelist: *Movelist,
     board: *const Board,
     from: usize,
     to: u64,

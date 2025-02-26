@@ -3,12 +3,12 @@ const std = @import("std");
 
 pub const SwapBench = struct {
     size: usize,
-    ml: chess.Movelist(u64),
+    ml: chess.Movelist,
 
     pub fn init(size: usize) SwapBench {
-        var ml = chess.Movelist(u64).new();
+        var ml = chess.Movelist.new();
         for (0..size) |i| {
-            ml.add(i);
+            ml.add(chess.ChessMove{ .x = i });
         }
         return .{
             .size = size,

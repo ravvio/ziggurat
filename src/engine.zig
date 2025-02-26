@@ -14,6 +14,7 @@ fn test_mate(
     const alloc = arena.allocator();
 
     var e = Engine.init(alloc);
+    e.quiet = true;
     defer e.deinit();
     var board = try chess.Board.fromFen(alloc, fen);
     defer board.deinit();

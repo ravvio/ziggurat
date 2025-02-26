@@ -56,14 +56,6 @@ pub fn run_perft(args: *std.process.ArgIterator) !void {
 }
 
 pub fn run_eval(args: *std.process.ArgIterator) !void {
-    var fen = args.next();
-    if (fen == null) {
-        return CommandError.MissingArgumentError;
-    }
-    if (std.mem.eql(u8, fen.?, "startpos")) {
-        fen = chess.constants.Fen.STARTPOS;
-    }
-
     const depth_str = args.next();
     if (depth_str == null) {
         return CommandError.MissingArgumentError;
@@ -72,6 +64,14 @@ pub fn run_eval(args: *std.process.ArgIterator) !void {
         return CommandError.InvalidArgument;
     };
 
+    var fen = args.next();
+    if (fen == null) {
+        return CommandError.MissingArgumentError;
+    }
+    if (std.mem.eql(u8, fen.?, "startpos")) {
+        fen = chess.constants.Fen.STARTPOS;
+    }
+
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
@@ -79,6 +79,19 @@ pub fn run_eval(args: *std.process.ArgIterator) !void {
     var board = try chess.Board.fromFen(allocator, fen.?);
     defer board.deinit();
     const color = board.state.current_side;
+
+    if (args.next()) |token| {
+        if (std.mem.eql(u8, token, "moves")) {
+            while (args.next()) |m| {
+                const move = try board.parseMove(m);
+                if (board.state.current_side) {
+                    board.makeMove(move, true);
+                } else {
+                    board.makeMove(move, false);
+                }
+            }
+        }
+    }
 
     var e = engine.Engine.init(allocator);
     defer e.deinit();

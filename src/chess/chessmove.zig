@@ -90,10 +90,8 @@ pub const ChessMove = struct {
         return (m.x >> shift.SORT) & bits.EIGHT;
     }
 
-    pub fn setSortScore(m: ChessMove, v: u8) usize {
-        const mask: usize = comptime ~(0xFFFFFFFF << shift.SORT);
-        const vu: usize = v << shift.SORT;
-        m.x = (m.x & mask) | vu;
+    pub fn setSortScore(m: *ChessMove, v: u8) void {
+        m.x |= (@as(usize, v) << shift.SORT);
     }
 
     pub fn onlyMove(m: ChessMove) usize {

@@ -2,12 +2,13 @@ const chess = @import("../chess.zig");
 const types = @import("types.zig");
 
 pub const mate_score: types.Score = 100_000;
+pub const max_score: types.Score = 99_000;
 
 pub fn scoreAsMate(score: types.Score) ?i64 {
-    if (@abs(score) < 99_000) {
+    if (@abs(score) < max_score) {
         return null;
     }
-    return (@as(i64, @divTrunc((@as(i64, mate_score) - @abs(score)), 2))) //
+    return (@as(i64, @divTrunc((@as(i64, mate_score) - @abs(score)), 2) + 1)) //
     * @as(i64, if (score > 0) 1 else -1);
 }
 
