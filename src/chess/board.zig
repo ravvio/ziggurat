@@ -15,88 +15,92 @@ const MoveType = constants.MoveType;
 const tables = @import("tables.zig");
 
 pub const Board = struct {
-    boards: [2][6]u64,
+    boards: [2][6]u64 = std.mem.zeroes([2][6]u64),
 
-    colors: [2]u64,
+    colors: [2]u64 = std.mem.zeroes([2]u64),
 
-    occupied: u64,
-    checkers: u64,
-    pinned: u64,
+    occupied: u64 = 0,
+    checkers: u64 = 0,
+    pinned: u64 = 0,
 
-    pieces: [64]usize,
+    pieces: [64]usize = [1]usize{constants.pieces.NONE} ** 64,
 
     state: GameState,
     history: ArrayList(GameState),
 
     zobrist_values: ZobristValues,
 
-    pub fn fromFen(
-        alloc: std.mem.Allocator,
-        fen: []const u8,
-    ) !Board {
-        var it = std.mem.split(u8, fen, " ");
-        var splits = std.ArrayList([]const u8).init(alloc);
-        while (it.next()) |split| {
-            try splits.append(split);
-        }
+    pub fn init(alloc: std.mem.Allocator) Board {
+        const history = ArrayList(GameState).init(alloc);
+        return .{
+            .state = GameState{},
+            .history = history,
+            .zobrist_values = ZobristValues.new(),
+        };
+    }
 
-        if (splits.items.len < 4 or splits.items.len > 6) {
-            return ChessError.InvalidFen;
-        }
+    pub fn setFen(self: *Board, fen: []const u8) !void {
+        var it = std.mem.split(u8, fen, " ");
+
+        self.history.clearAndFree();
 
         // Part 1 - Pieces
-        var boards = std.mem.zeroes([2][6]u64);
-        var pcs: [64]u64 = [_]u64{constants.pieces.NONE} ** 64;
+        const split = it.next();
+        if (split == null) {
+            return ChessError.InvalidFen;
+        }
+        self.pieces = [1]usize{constants.pieces.NONE} ** 64;
+        self.boards = std.mem.zeroes([2][6]u64);
         var index: usize = 0;
-        for (splits.items[0]) |c| {
+        for (split.?) |c| {
             switch (c) {
                 'k' => {
-                    boards[0][0] ^= bb.SQUARES[index];
-                    pcs[index] = constants.pieces.KING;
+                    self.boards[0][0] ^= bb.SQUARES[index];
+                    self.pieces[index] = constants.pieces.KING;
                 },
                 'q' => {
-                    boards[0][1] ^= bb.SQUARES[index];
-                    pcs[index] = constants.pieces.QUEEN;
+                    self.boards[0][1] ^= bb.SQUARES[index];
+                    self.pieces[index] = constants.pieces.QUEEN;
                 },
                 'r' => {
-                    boards[0][2] ^= bb.SQUARES[index];
-                    pcs[index] = constants.pieces.ROOK;
+                    self.boards[0][2] ^= bb.SQUARES[index];
+                    self.pieces[index] = constants.pieces.ROOK;
                 },
                 'b' => {
-                    boards[0][3] ^= bb.SQUARES[index];
-                    pcs[index] = constants.pieces.BISHOP;
+                    self.boards[0][3] ^= bb.SQUARES[index];
+                    self.pieces[index] = constants.pieces.BISHOP;
                 },
                 'n' => {
-                    boards[0][4] ^= bb.SQUARES[index];
-                    pcs[index] = constants.pieces.KNIGHT;
+                    self.boards[0][4] ^= bb.SQUARES[index];
+                    self.pieces[index] = constants.pieces.KNIGHT;
                 },
                 'p' => {
-                    boards[0][5] ^= bb.SQUARES[index];
-                    pcs[index] = constants.pieces.PAWN;
+                    self.boards[0][5] ^= bb.SQUARES[index];
+                    self.pieces[index] = constants.pieces.PAWN;
                 },
                 'K' => {
-                    boards[1][0] ^= bb.SQUARES[index];
-                    pcs[index] = constants.pieces.KING;
+                    self.boards[1][0] ^= bb.SQUARES[index];
+                    self.pieces[index] = constants.pieces.KING;
                 },
                 'Q' => {
-                    boards[1][1] ^= bb.SQUARES[index];
-                    pcs[index] = constants.pieces.QUEEN;
+                    self.boards[1][1] ^= bb.SQUARES[index];
+                    self.pieces[index] = constants.pieces.QUEEN;
                 },
                 'R' => {
-                    boards[1][2] ^= bb.SQUARES[index];
-                    pcs[index] = constants.pieces.ROOK;
+                    self.boards[1][2] ^= bb.SQUARES[index];
+                    self.pieces[index] = constants.pieces.ROOK;
                 },
                 'B' => {
-                    boards[1][3] ^= bb.SQUARES[index];
-                    pcs[index] = constants.pieces.BISHOP;
+                    self.boards[1][3] ^= bb.SQUARES[index];
+                    self.pieces[index] = constants.pieces.BISHOP;
                 },
                 'N' => {
-                    boards[1][4] ^= bb.SQUARES[index];
-                    pcs[index] = constants.pieces.KNIGHT;
+                    self.boards[1][4] ^= bb.SQUARES[index];
+                    self.pieces[index] = constants.pieces.KNIGHT;
                 },
                 'P' => {
-                    boards[1][5] ^= bb.SQUARES[index];
-                    pcs[index] = constants.pieces.PAWN;
+                    self.boards[1][5] ^= bb.SQUARES[index];
+                    self.pieces[index] = constants.pieces.PAWN;
                 },
                 '1', '2', '3', '4', '5', '6', '7', '8' => {
                     const x = try std.fmt.parseInt(usize, &[1]u8{c}, 10);
@@ -118,94 +122,87 @@ pub const Board = struct {
         }
 
         // Part 2 - Color to play
-        var current_side: bool = undefined;
-        const side = splits.items[1];
-        if (side.len != 1) {
-            return ChessError.InvalidFen;
-        }
-        switch (splits.items[1][0]) {
-            'w' => current_side = true,
-            'b' => current_side = false,
-            else => {
+        if (it.next()) |side| {
+            if (side.len != 1) {
                 return ChessError.InvalidFen;
-            },
+            }
+            switch (side[0]) {
+                'w' => self.state.current_side = true,
+                'b' => self.state.current_side = false,
+                else => {
+                    return ChessError.InvalidFen;
+                },
+            }
+        } else {
+            return ChessError.InvalidFen;
         }
 
         // Part 3 - Castling
-        var castling_rights = CastlingRights.ZERO;
-        const castling = splits.items[2];
-        if (castling.len > 4) {
-            return ChessError.InvalidFen;
-        }
-        for (castling) |c| {
-            switch (c) {
-                'k' => castling_rights.x |= CastlingRights.BK.x,
-                'q' => castling_rights.x |= CastlingRights.BQ.x,
-                'K' => castling_rights.x |= CastlingRights.WK.x,
-                'Q' => castling_rights.x |= CastlingRights.WQ.x,
-                '-' => {},
-                else => return ChessError.InvalidFen,
+        self.state.castling = CastlingRights.ZERO;
+        if (it.next()) |castling| {
+            if (castling.len > 4) {
+                return ChessError.InvalidFen;
             }
+            for (castling) |c| {
+                switch (c) {
+                    'k' => self.state.castling.x |= CastlingRights.BK.x,
+                    'q' => self.state.castling.x |= CastlingRights.BQ.x,
+                    'K' => self.state.castling.x |= CastlingRights.WK.x,
+                    'Q' => self.state.castling.x |= CastlingRights.WQ.x,
+                    '-' => {},
+                    else => return ChessError.InvalidFen,
+                }
+            }
+        } else {
+            return ChessError.InvalidFen;
         }
 
         // Part 4 - En Passant
-        var en_passant: ?Square = null;
-        const enpassant = splits.items[3];
-        if (!std.mem.eql(u8, enpassant, "-")) {
-            if (enpassant.len != 2) {
-                return ChessError.InvalidFen;
+        if (it.next()) |enpassant| {
+            if (!std.mem.eql(u8, enpassant, "-")) {
+                if (enpassant.len != 2) {
+                    return ChessError.InvalidFen;
+                }
+                self.state.en_passant = try Square.fromAlgebraic(enpassant[0..2]);
             }
-            en_passant = try Square.fromAlgebraic(enpassant[0..2]);
+        } else {
+            return ChessError.InvalidFen;
         }
 
         // Part 5 - Halfmove clock
-        var halfmove_clock: usize = 0;
-        if (splits.items.len > 4) {
-            const halfmove = splits.items[4];
-            halfmove_clock = try std.fmt.parseInt(usize, halfmove, 10);
+        if (it.next()) |halfmove| {
+            self.state.halfmove_clock = try std.fmt.parseInt(usize, halfmove, 10);
+        } else {
+            self.state.halfmove_clock = 0;
         }
 
         // Part 6 - Move number
-        var move_number: usize = 1;
-        if (splits.items.len > 5) {
-            const movenum = splits.items[5];
-            move_number = try std.fmt.parseInt(usize, movenum, 10);
+        if (it.next()) |movenum| {
+            self.state.move_number = try std.fmt.parseInt(usize, movenum, 10);
+        } else {
+            self.state.move_number = 1;
         }
 
         // Derive others
-        var black: u64 = 0;
-        for (boards[0]) |b| {
-            black |= b;
+        self.colors = std.mem.zeroes([2]u64);
+        for (self.boards[0]) |b| {
+            self.colors[0] |= b;
         }
-        var white: u64 = 0;
-        for (boards[1]) |b| {
-            white |= b;
+        for (self.boards[1]) |b| {
+            self.colors[1] |= b;
         }
+        self.occupied = self.colors[0] | self.colors[1];
 
-        // TODO - checkers and pinned
+        self.regenerateZobrist();
+    }
 
-        var b = Board{
-            .boards = boards,
-            .colors = [2]u64{ black, white },
-            .occupied = white | black,
-            .checkers = 0,
-            .pinned = 0,
-            .pieces = pcs,
-            .zobrist_values = ZobristValues.new(),
-            .history = ArrayList(GameState).init(alloc),
-            .state = GameState{
-                .current_side = current_side,
-                .move_number = move_number,
-                .halfmove_clock = halfmove_clock,
-                .en_passant = en_passant,
-                .castling = castling_rights,
-                .next_move = ChessMove{ .x = 0 },
-                .zobrist_key = 0,
-            },
-        };
-        b.regenerateZobrist();
-
-        return b;
+    pub fn fromFen(
+        alloc: std.mem.Allocator,
+        fen: []const u8,
+    ) !Board {
+        var res = init(alloc);
+        try res.setFen(fen);
+        return res;
     }
 
     pub fn deinit(b: *Board) void {
@@ -258,13 +255,13 @@ pub const Board = struct {
     pub fn regenerateZobrist(b: *Board) void {
         var z: u64 = 0;
         // Pieces
-        var iterator_w = bb.BitboardIterator{ .u = b.colors[0] };
-        while (iterator_w.next()) |sq| {
+        var iterator_b = bb.BitboardIterator{ .u = b.colors[0] };
+        while (iterator_b.next()) |sq| {
             const piece = b.pieces[sq];
             z ^= b.zobrist_values.pieces[0][piece][sq];
         }
-        var iterator_b = bb.BitboardIterator{ .u = b.colors[1] };
-        while (iterator_b.next()) |sq| {
+        var iterator_w = bb.BitboardIterator{ .u = b.colors[1] };
+        while (iterator_w.next()) |sq| {
             const piece = b.pieces[sq];
             z ^= b.zobrist_values.pieces[1][piece][sq];
         }
@@ -680,7 +677,8 @@ pub const Board = struct {
             b.boards[attacker][pieces.ROOK] & tables.rookAttacks(sq, occupied) != 0 or
             b.boards[attacker][pieces.BISHOP] & tables.bishopAttacks(sq, occupied) != 0 or
             b.boards[attacker][pieces.KNIGHT] & tables.knightAttacks(sq) != 0 or
-            b.boards[attacker][pieces.PAWN] & tables.pawnAttacks(color, sq) != 0);
+            b.boards[attacker][pieces.PAWN] & tables.pawnAttacks(color, sq) != 0 or
+            b.boards[attacker][pieces.KING] & tables.kingAttacks(sq) != 0);
     }
 };
 

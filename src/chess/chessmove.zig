@@ -18,7 +18,7 @@ const Square = @import("square.zig").Square;
 const pieces = @import("constants.zig").pieces;
 
 pub const ChessMove = struct {
-    x: usize,
+    x: usize = 0,
 
     const bits = struct {
         pub const ONE: usize = 0b1;

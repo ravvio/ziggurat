@@ -61,6 +61,16 @@ pub fn main() !void {
         &eval.EvalBench.init(chess.constants.Fen.STARTPOS, 4),
         .{},
     );
+    try bench.addParam(
+        "Eval2 kiwipete",
+        &eval.EvalBench.init(chess.constants.Fen.STARTPOS, 2),
+        .{},
+    );
+    try bench.addParam(
+        "Eval4 kiwipete",
+        &eval.EvalBench.init(chess.constants.Fen.KIWIPETE, 4),
+        .{},
+    );
 
     try stdout.writeAll("\n");
     try bench.run(stdout);

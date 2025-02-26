@@ -3,12 +3,12 @@ const chess = @import("../chess.zig");
 const engine = @import("../engine.zig");
 
 pub const EvalBench = struct {
-    depth: i8,
+    depth: u8,
     fen: []const u8,
 
     pub fn init(
         fen: []const u8,
-        depth: i8,
+        depth: u8,
     ) EvalBench {
         return .{
             .depth = depth,
@@ -22,6 +22,7 @@ pub const EvalBench = struct {
         };
         defer board.deinit();
         var e = engine.Engine.init(alloc);
+        e.quiet = true;
         defer e.deinit();
 
         if (board.state.current_side) {

@@ -4,7 +4,7 @@ const chess = @import("./chess.zig");
 pub fn perft(
     board: *chess.Board,
     comptime color: bool,
-    depth: i8,
+    depth: u8,
 ) u64 {
     if (depth == 0) {
         return 1;
@@ -33,10 +33,11 @@ pub fn perft(
     return total;
 }
 
+// TODO change to stdout
 pub fn perftDivide(
     board: *chess.Board,
     comptime color: bool,
-    depth: i8,
+    depth: u8,
 ) u64 {
     if (depth == 0) {
         return 1;
@@ -52,6 +53,7 @@ pub fn perftDivide(
     );
 
     var i: usize = 0;
+    std.debug.print("{}\n", .{ml.count});
     while (i < ml.count) : (i += 1) {
         const move = ml.list[i];
         board.makeMove(move, color);
@@ -60,9 +62,9 @@ pub fn perftDivide(
             continue;
         }
         const leaves = perft(board, !color, depth - 1);
+        std.debug.print("{}: {}\n", .{ move, leaves });
         total += leaves;
         board.unmakeMove(color);
-        std.debug.print("{}: {}\n", .{ move, leaves });
     }
 
     std.debug.print("Total: {}\n", .{total});
@@ -113,4 +115,22 @@ test "perft kiwipete" {
     try std.testing.expectEqual(4_085_603, res);
     // res = perft(&board, 5);
     // try std.testing.expectEqual(193_690_690, res);
+}
+
+test "broken position" {
+    chess.tables.initAll();
+
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+
+    var board = try chess.Board.fromFen(alloc, "rnbq1bnr/ppppp3/5k2/6p1/6p1/1P2P2P/P1PP4/RNBQKBNR w - - 0 9");
+    defer board.deinit();
+
+    var res = perft(&board, true, 2);
+    try std.testing.expectEqual(750, res);
+    res = perft(&board, true, 4);
+    try std.testing.expectEqual(589_188, res);
+    // res = perft(&board, true, 6);
+    // try std.testing.expectEqual(490_634_943, res);
 }

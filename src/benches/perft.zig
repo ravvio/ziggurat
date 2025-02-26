@@ -3,12 +3,12 @@ const chess = @import("../chess.zig");
 const perft = @import("../perft.zig");
 
 pub const PerftBench = struct {
-    depth: i8,
+    depth: u8,
     fen: []const u8,
 
     pub fn init(
         fen: []const u8,
-        depth: i8,
+        depth: u8,
     ) PerftBench {
         return .{
             .depth = depth,

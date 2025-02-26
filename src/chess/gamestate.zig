@@ -44,16 +44,16 @@ pub const CastlingRights = struct {
 
 pub const GameState = struct {
     /// Current player, true => white, false => black
-    current_side: bool,
+    current_side: bool = true,
 
-    move_number: usize,
-    halfmove_clock: usize,
+    move_number: usize = 1,
+    halfmove_clock: usize = 0,
 
-    en_passant: ?Square,
-    castling: CastlingRights,
+    en_passant: ?Square = null,
+    castling: CastlingRights = CastlingRights.ZERO,
 
-    next_move: ChessMove,
-    zobrist_key: u64,
+    next_move: ChessMove = ChessMove{ .x = 0 },
+    zobrist_key: u64 = 0,
 
     pub fn format(
         s: GameState,

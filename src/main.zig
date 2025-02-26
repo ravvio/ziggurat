@@ -1,6 +1,5 @@
 const std = @import("std");
 const chess = @import("chess.zig");
-const uci = @import("uci.zig");
 const engine = @import("engine.zig");
 
 const perft = @import("perft.zig");
@@ -11,6 +10,14 @@ const CommandError = error{
 };
 
 pub fn run_perft(args: *std.process.ArgIterator) !void {
+    const depth_str = args.next();
+    if (depth_str == null) {
+        return CommandError.MissingArgumentError;
+    }
+    const depth = std.fmt.parseInt(u8, depth_str.?, 10) catch {
+        return CommandError.InvalidArgument;
+    };
+
     var fen = args.next();
     if (fen == null) {
         return CommandError.MissingArgumentError;
@@ -19,20 +26,26 @@ pub fn run_perft(args: *std.process.ArgIterator) !void {
         fen = chess.constants.Fen.STARTPOS;
     }
 
-    const depth_str = args.next();
-    if (depth_str == null) {
-        return CommandError.MissingArgumentError;
-    }
-    const depth = std.fmt.parseInt(i8, depth_str.?, 10) catch {
-        return CommandError.InvalidArgument;
-    };
-
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
     var board = try chess.Board.fromFen(allocator, fen.?);
     defer board.deinit();
+
+    if (args.next()) |token| {
+        if (std.mem.eql(u8, token, "moves")) {
+            while (args.next()) |m| {
+                const move = try board.parseMove(m);
+                if (board.state.current_side) {
+                    board.makeMove(move, true);
+                } else {
+                    board.makeMove(move, false);
+                }
+            }
+        }
+    }
+
     const color = board.state.current_side;
 
     if (color) {
@@ -55,7 +68,7 @@ pub fn run_eval(args: *std.process.ArgIterator) !void {
     if (depth_str == null) {
         return CommandError.MissingArgumentError;
     }
-    const depth = std.fmt.parseInt(i8, depth_str.?, 10) catch {
+    const depth = std.fmt.parseInt(u8, depth_str.?, 10) catch {
         return CommandError.InvalidArgument;
     };
 
@@ -77,7 +90,7 @@ pub fn run_eval(args: *std.process.ArgIterator) !void {
     }
 
     std.debug.print("Best: {}\n", .{e.best_move});
-    std.debug.print("Eval: {}\n", .{e.eval});
+    std.debug.print("Eval: {}\n", .{e.score});
 }
 
 pub fn main() !void {
@@ -92,10 +105,9 @@ pub fn main() !void {
     const subcommand = args.next();
 
     if (subcommand == null) {
-        // TODO
-    }
-
-    if (std.mem.eql(u8, subcommand.?, "perft")) {
+        var uci = try engine.Uci.init(allocator);
+        try uci.run();
+    } else if (std.mem.eql(u8, subcommand.?, "perft")) {
         try run_perft(&args);
     } else if (std.mem.eql(u8, subcommand.?, "eval")) {
         try run_eval(&args);

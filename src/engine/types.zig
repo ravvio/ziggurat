@@ -1,1 +1,1 @@
-pub const Eval = i32;
+pub const Score = i32;
