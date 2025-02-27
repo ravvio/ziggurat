@@ -161,11 +161,11 @@ fn init_piece_value_tables(comptime endgame: bool) [2][6][64]types.Score {
             const b = mirror[sq];
 
             if (endgame) {
-                res[0][piece][sq] = mg_material[piece] + mg_pst[piece][b];
-                res[1][piece][sq] = mg_material[piece] + mg_pst[piece][w];
-            } else {
                 res[0][piece][sq] = eg_material[piece] + eg_pst[piece][b];
                 res[1][piece][sq] = eg_material[piece] + eg_pst[piece][w];
+            } else {
+                res[0][piece][sq] = mg_material[piece] + mg_pst[piece][b];
+                res[1][piece][sq] = mg_material[piece] + mg_pst[piece][w];
             }
         }
     }
