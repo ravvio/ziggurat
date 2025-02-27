@@ -153,29 +153,23 @@ pub const mirror: [64]types.Score = .{
     0,  1,  2,  3,  4,  5,  6,  7,
 };
 
-fn init_piece_value_tables(comptime endgame: bool) [2][6][64]types.Score {
-    var res: [2][6][64]types.Score = undefined;
+/// Vecotrized piece value table
+pub const piece_value: [2][6][64]@Vector(2, types.Score) = compute: {
+    var res: [2][6][64]@Vector(2, types.Score) = undefined;
     for (0..6) |piece| {
         for (0..64) |sq| {
             const w = sq;
             const b = mirror[sq];
 
-            if (endgame) {
-                res[0][piece][sq] = eg_material[piece] + eg_pst[piece][b];
-                res[1][piece][sq] = eg_material[piece] + eg_pst[piece][w];
-            } else {
-                res[0][piece][sq] = mg_material[piece] + mg_pst[piece][b];
-                res[1][piece][sq] = mg_material[piece] + mg_pst[piece][w];
-            }
+            res[0][piece][sq] = .{
+                mg_material[piece] + mg_pst[piece][b],
+                eg_material[piece] + eg_pst[piece][b],
+            };
+            res[1][piece][sq] = .{
+                mg_material[piece] + mg_pst[piece][w],
+                eg_material[piece] + eg_pst[piece][w],
+            };
         }
     }
-    return res;
-}
-
-/// Composite table that holds both the piece and the piece-square values
-/// precalculated for white and black in the middlegame
-pub const mg_piece_value: [2][6][64]types.Score = init_piece_value_tables(false);
-
-/// Composite table that holds both the piece and the piece-square values
-/// precalculated for white and black in the endgame
-pub const eg_piece_value: [2][6][64]types.Score = init_piece_value_tables(true);
+    break :compute res;
+};
