@@ -64,3 +64,54 @@ Eval4 startpos         100000   1.411s         14.117us ± 18.936us    (12.022us
 Eval2 kiwipete         100000   1.254s         12.549us ± 20.728us    (10.582us ... 1.006ms)       11.799us   14.267us   17.165us
 Eval4 kiwipete         100000   1.893s         18.935us ± 16.353us    (16.428us ... 730.198us)     18.184us   22.619us   30.267us
 ```
+
+### v0.2.0 - Quiescence
+- Quiescence search on captures
+- Improved function for determining if a square is attacked
+
+```
+Movelist Swap          100000   23.588ms       235ns ± 78ns           (206ns ... 18.026us)         246ns      277ns      283ns
+Board From FEN 1       100000   99.555ms       995ns ± 65ns           (959ns ... 3.605us)          1.001us    1.072us    1.091us
+Board From FEN 2       100000   100.678ms      1.006us ± 76ns         (967ns ... 14.081us)         1.011us    1.058us    1.091us
+Subtract usize         100000   12.095ms       120ns ± 138ns          (118ns ... 31.166us)         120ns      124ns      126ns
+Perft2 startpos        100000   1.378s         13.78us ± 894ns        (12.901us ... 56.463us)      13.984us   15.808us   16.351us
+Perft4 startpos        371      1.994s         5.376ms ± 112.334us    (5.292ms ... 6.122ms)        5.363ms    6.057ms    6.107ms
+Perft6 startpos        1        3.245s         3.245s ± 0ns           (3.245s ... 3.245s)          3.245s     3.245s     3.245s
+Perft2 kiwipete        36321    2.002s         55.145us ± 3.771us     (52.258us ... 249.801us)     55.2us     64.056us   66.022us
+Perft4 kiwipete        18       1.931s         107.279ms ± 1.809ms    (106.325ms ... 112.267ms)    107.165ms  112.267ms  112.267ms
+Eval2 startpos         100000   1.758s         17.58us ± 21.944us     (15.335us ... 1.141ms)       16.718us   20.381us   25.66us
+Eval4 startpos         10185    1.986s         195.04us ± 11.195us    (186.138us ... 544.66us)     194.269us  230.471us  234.857us
+Eval2 kiwipete         100000   1.742s         17.426us ± 20.521us    (15.347us ... 773.712us)     16.662us   19.754us   23.386us
+Eval4 kiwipete         156      1.99s          12.76ms ± 356.573us    (12.5ms ... 15.431ms)        12.82ms    14.218ms   15.431ms
+```
+
+```
+v0.2.0 vs v0.1.1 - 100 games 40/60
+Elo difference: 7.5 +/- 27.4, LOS: 70.4 %, DrawRatio: 84.9 %
+```
+
+### v0.2.1 - TT Quiescence
+- Quiescence and Transpositions
+
+```
+benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995
+-----------------------------------------------------------------------------------------------------------------------------
+Movelist Swap          100000   26.15ms        261ns ± 164ns          (237ns ... 29.861us)         269ns      347ns      396ns
+Board From FEN 1       100000   99.893ms       998ns ± 249ns          (967ns ... 31.09us)          997ns      1.044us    1.092us
+Board From FEN 2       100000   100.984ms      1.009us ± 265ns        (974ns ... 31.164us)         1.015us    1.057us    1.098us
+Subtract usize         100000   12.013ms       120ns ± 96ns           (118ns ... 29.619us)         120ns      123ns      123ns
+Perft2 startpos        100000   1.393s         13.93us ± 1.513us      (12.804us ... 82.146us)      14.101us   16.228us   17.447us
+Perft4 startpos        369      2.003s         5.43ms ± 129.093us     (5.259ms ... 6.33ms)         5.422ms    6.13ms     6.295ms
+Perft6 startpos        1        3.291s         3.291s ± 0ns           (3.291s ... 3.291s)          3.291s     3.291s     3.291s
+Perft2 kiwipete        34351    2.001s         58.264us ± 2.967us     (53.883us ... 268.072us)     58.697us   66.398us   67.877us
+Perft4 kiwipete        17       1.925s         113.263ms ± 890.739us  (112.838ms ... 116.651ms)    113.141ms  116.651ms  116.651ms
+Eval2 startpos         100000   1.774s         17.744us ± 20.606us    (15.345us ... 763.789us)     16.957us   22.008us   26.957us
+Eval4 startpos         86210    1.998s         23.18us ± 18.09us      (19.968us ... 614.272us)     22.322us   29.112us   37.528us
+Eval2 kiwipete         100000   1.585s         15.858us ± 21.629us    (13.445us ... 849.824us)     15.036us   19.909us   26.487us
+Eval4 kiwipete         26515    2.017s         76.106us ± 11.502us    (67.907us ... 335.921us)     76.01us    132.72us   188.779us
+```
+
+```
+v0.2.1 vs v0.1.1 - 100 games 40/60
+Elo difference: 52.5 +/- 38.7, LOS: 99.5 %, DrawRatio: 67.0 %
+```

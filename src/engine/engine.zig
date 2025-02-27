@@ -183,6 +183,16 @@ pub const Engine = struct {
             return 0;
         }
 
+        // Depth 0 reached, proceed to quiescence
+        if (depth_ == 0) {
+            return self.quiescence(
+                board,
+                color,
+                alpha_,
+                beta_,
+            );
+        }
+
         const zobrist_key = board.state.zobrist_key;
 
         // - Add node
@@ -243,32 +253,18 @@ pub const Engine = struct {
 
         // === STEP 3 - Search
 
-        // Depth 0 reached, proceed to static evaluation
-        if (depth == 0) {
-            return heuristic.evaluate(board, color);
-        }
-
         // Start with the worst possible evaluation
-        var best_eval = -heuristic.mate_score + self.ply;
         var best_move = chess.ChessMove{};
+        var best_score = -heuristic.mate_score + self.ply;
 
         // - Generate moves
         var movelist = chess.Movelist.new();
         board.generatePseudolegalMoves(chess.constants.MoveType.All, color, &movelist);
 
-        // - Stalemate or Checkmate
-        // No move was found, if we are in check this is a checkmate
-        // otherwhise is a stalemate
-        if (movelist.count == 0) {
-            if (board.isKingAttacked(color)) {
-                return best_eval;
-            } else {
-                return 0;
-            }
-        }
-
         // - Score moves
         movelist.scoreMoves(hashmove);
+
+        var movesfound: usize = 0;
 
         // Iterate all moves
         while (movelist.pick()) |move| {
@@ -279,6 +275,8 @@ pub const Engine = struct {
                 board.unmakeMove(color);
                 continue;
             }
+
+            movesfound += 1;
 
             // Increment ply, add to history, ecc..
             self.ply += 1;
@@ -304,8 +302,8 @@ pub const Engine = struct {
 
             // - Alpha Beta Pruning
             // We have found a better move
-            if (leaf_eval > best_eval) {
-                best_eval = leaf_eval;
+            if (leaf_eval > best_score) {
+                best_score = leaf_eval;
 
                 best_move = move;
                 // If this is a root node, set best move
@@ -314,15 +312,15 @@ pub const Engine = struct {
                 }
 
                 // If the eval surpasses alpha we have a new cutoff
-                if (best_eval > alpha) {
-                    alpha = best_eval;
+                if (best_score > alpha) {
                     // If alpha surpasses beta we do not need to search
                     // other moves. This move will definitely be rejected
                     // by our opponent, even if we find a better one
                     // it does not matter
-                    if (alpha > beta) {
-                        break;
+                    if (best_score >= beta) {
+                        return beta;
                     }
+                    alpha = best_score;
                 }
             }
         }
@@ -330,25 +328,194 @@ pub const Engine = struct {
         // - Stalemate or Checkmate
         // No move was found, if we are in check this is a checkmate
         // otherwhise is a stalemate
-        if (best_eval == -heuristic.mate_score) {
+        if (movesfound == 0) {
             if (board.isKingAttacked(color)) {
-                best_eval += self.ply;
+                return best_score;
             } else {
-                best_eval = 0;
+                return 0;
             }
         }
 
         // Set transposition
-        const flag = if (best_eval >= beta) transposition.TranspositionFlag.Alpha else if (alpha != alpha_) transposition.TranspositionFlag.Exact else transposition.TranspositionFlag.Beta;
+        const flag = if (best_score >= beta) transposition.TranspositionFlag.Alpha else if (alpha != alpha_) transposition.TranspositionFlag.Exact else transposition.TranspositionFlag.Beta;
         transposition.global_tt.put(
             zobrist_key,
             depth,
             best_move,
-            best_eval,
+            best_score,
             flag,
         );
 
-        return best_eval;
+        return best_score;
+    }
+
+    /// Execute a quiescence search
+    /// This is useful to avoid the horizon effect where we end our search
+    /// in a position that seems winning but is actually losing due to some
+    /// tactic, like a capture or a check
+    /// The objective is to make sure that we go to heuristic evalutation
+    /// only if the position is quiet
+    /// More: https://www.chessprogramming.org/Quiescence_Search
+    fn quiescence(
+        self: *Engine,
+        board: *chess.Board,
+        comptime color: bool,
+        alpha_: types.Score,
+        beta_: types.Score,
+    ) types.Score {
+        // === STEP 1 - Preparation
+        // - Check if we should stop
+        // This is done every few nodes
+        if (self.nodes & 2047 == 0 and self.shouldStop()) {
+            self.stop = true;
+            return 0;
+        }
+
+        self.nodes += 1;
+
+        // === STEP 2 - Preliminary checks and pruning
+
+        // Make sure we do not go over the move limit
+        if (self.ply >= max_ply) {
+            return heuristic.evaluate(board, color);
+        }
+
+        // TODO: here we can evaluate if the position is a draw in material
+
+        var alpha = alpha_;
+        const beta = beta_;
+
+        // Start with the worst possible evaluation
+        // do this when we check if we are in check
+        // var best_score = -heuristic.mate_score + self.ply;
+
+        // - Standing Pat Pruning
+        // Do a static evaluation this is used as a lower bound for the
+        // evaluation This is usually ok becouse some move is usually better
+        // than no move (unless we are in zugzwang)
+        // When we implement better check evaluation only do this if we are
+        // not in check
+        var best_score = heuristic.evaluate(board, color);
+        // If the score is already greater than the higher bound we fail hard
+        if (best_score >= beta) {
+            return beta;
+        }
+        if (best_score > alpha) {
+            alpha = best_score;
+        }
+
+        // === STEP 3 - Transposition
+        // Save this move to use in move ordering
+        const zobrist_key = board.state.zobrist_key;
+        var hashmove: u32 = 0;
+        if (transposition.global_tt.probe(zobrist_key)) |res| {
+            hashmove = res.move;
+            var score = res.score;
+            // Adjust mate score
+            // TODO do this only for exact?
+            if (score > heuristic.max_score) {
+                score -= self.ply;
+            } else if (score < -heuristic.max_score) {
+                score += self.ply;
+            }
+
+            // Based on flag return score or set alpha/beta
+            switch (res.flag) {
+                transposition.TranspositionFlag.Exact => {
+                    return score;
+                },
+                transposition.TranspositionFlag.Alpha => {
+                    if (score >= beta) {
+                        return score;
+                    }
+                },
+                transposition.TranspositionFlag.Beta => {
+                    if (score <= alpha) {
+                        return score;
+                    }
+                },
+                else => {},
+            }
+            // Fail hard
+            if (alpha >= beta) {
+                return score;
+            }
+        }
+
+        // === STEP 4 - Search
+
+        // - Generate moves
+        // for now only captures
+        var movelist = chess.Movelist.new();
+        board.generatePseudolegalMoves(chess.constants.MoveType.Capture, color, &movelist);
+        // TODO: try to generate checks and check defeces
+
+        // - Score moves
+        movelist.scoreMoves(hashmove);
+
+        var movesfound: usize = 0;
+
+        // Iterate all moves
+        while (movelist.pick()) |move| {
+            // Make the move
+            board.makeMove(move, color);
+            // Undo if kind is attacked i.e. illegal move was made
+            if (board.isKingAttacked(color)) {
+                board.unmakeMove(color);
+                continue;
+            }
+
+            movesfound += 1;
+
+            // Increment ply
+            // Do not add to history because we do not care for it in quiescence
+            self.ply += 1;
+
+            // Evaluate the leaf
+            const leaf_eval = -self.quiescence(
+                board,
+                !color,
+                -beta,
+                -alpha,
+            );
+
+            // Undo stuff
+            self.ply -= 1;
+
+            // Unmake move
+            board.unmakeMove(color);
+
+            // - Alpha Beta Pruning
+            // We have found a better move
+            if (leaf_eval > best_score) {
+                best_score = leaf_eval;
+
+                // If the eval surpasses alpha we have a new cutoff
+                if (best_score > alpha) {
+                    // If alpha surpasses beta we do not need to search
+                    // other moves. This move will definitely be rejected
+                    // by our opponent, even if we find a better one
+                    // it does not matter
+                    if (best_score >= beta) {
+                        return beta;
+                    }
+                    alpha = best_score;
+                }
+            }
+        }
+
+        // - Stalemate or Checkmate
+        // No move was found, if we are in check this is a checkmate
+        // otherwhise is a stalemate
+        if (movesfound == 0) {
+            if (board.isKingAttacked(color)) {
+                return -heuristic.mate_score + self.ply;
+            } else {
+                return 0;
+            }
+        }
+
+        return best_score;
     }
 
     /// Check if the position is a draw
