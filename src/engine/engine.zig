@@ -294,17 +294,6 @@ pub const Engine = struct {
             }
         }
 
-        // - Stalemate or Checkmate
-        // No move was found, if we are in check this is a checkmate
-        // otherwhise is a stalemate
-        if (best_score == -heuristic.mate_score) {
-            if (board.isKingAttacked(color)) {
-                best_score += self.ply;
-            } else {
-                best_score = 0;
-            }
-        }
-
         return best_score;
     }
 

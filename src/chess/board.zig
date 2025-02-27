@@ -664,27 +664,19 @@ pub const Board = struct {
     }
 
     pub fn squareAttacked(b: *const Board, comptime color: bool, sq: usize) bool {
-        const attacker = @intFromBool(!color);
-        return (b.boards[attacker][pieces.KING] & tables.kingAttacks(sq) != 0 //
-        or b.boards[attacker][pieces.QUEEN] & tables.queenAttacks(sq, b.occupied) != 0 //
-        or b.boards[attacker][pieces.ROOK] & tables.rookAttacks(sq, b.occupied) != 0 //
-        or b.boards[attacker][pieces.BISHOP] & tables.bishopAttacks(sq, b.occupied) != 0 //
-        or b.boards[attacker][pieces.KNIGHT] & tables.knightAttacks(sq) != 0 //
-        or b.boards[attacker][pieces.PAWN] & tables.pawnAttacks(color, sq) != 0 //
-        );
-    }
-
-    pub fn isKingAttacked(b: *const Board, comptime color: bool) bool {
         const occupied = b.occupied;
         const attacker = @intFromBool(!color);
-        const sq = @ctz(b.boards[@intFromBool(color)][pieces.KING]);
 
-        return (b.boards[attacker][pieces.QUEEN] & tables.queenAttacks(sq, occupied) != 0 or
-            b.boards[attacker][pieces.ROOK] & tables.rookAttacks(sq, occupied) != 0 or
-            b.boards[attacker][pieces.BISHOP] & tables.bishopAttacks(sq, occupied) != 0 or
+        return ((b.boards[attacker][pieces.QUEEN] | b.boards[attacker][pieces.ROOK]) & tables.rookAttacks(sq, occupied) != 0 or
+            (b.boards[attacker][pieces.QUEEN] | b.boards[attacker][pieces.BISHOP]) & tables.bishopAttacks(sq, occupied) != 0 or
             b.boards[attacker][pieces.KNIGHT] & tables.knightAttacks(sq) != 0 or
             b.boards[attacker][pieces.PAWN] & tables.pawnAttacks(color, sq) != 0 or
             b.boards[attacker][pieces.KING] & tables.kingAttacks(sq) != 0);
+    }
+
+    pub fn isKingAttacked(b: *const Board, comptime color: bool) bool {
+        const sq = @ctz(b.boards[@intFromBool(color)][pieces.KING]);
+        return b.squareAttacked(color, sq);
     }
 };
 
