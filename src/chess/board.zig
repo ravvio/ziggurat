@@ -533,6 +533,12 @@ pub const Board = struct {
             .All => ~friend,
             .Quiet => ~occupied,
             .Capture => enemy,
+            .CheckDefence => blk: {
+                // TODO this is not perfect but for now ok
+                const ksq = b.kingSquare(color).x;
+                const attacks = tables.queenAttacks(ksq, occupied) | tables.knightAttacks(ksq) | tables.pawnAttacks(color, ksq);
+                break :blk attacks & ~friend;
+            },
         };
 
         // Generate Queen moves

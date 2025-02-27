@@ -4,6 +4,7 @@ pub const MoveType = enum {
     All,
     Quiet,
     Capture,
+    CheckDefence,
 };
 
 pub const Fen = struct {
