@@ -115,3 +115,28 @@ Eval4 kiwipete         26515    2.017s         76.106us ± 11.502us    (67.907us
 v0.2.1 vs v0.1.1 - 100 games 40/60
 Elo difference: 52.5 +/- 38.7, LOS: 99.5 %, DrawRatio: 67.0 %
 ```
+
+### v0.2.2 - Piece Square Values
+
+```
+benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995
+-----------------------------------------------------------------------------------------------------------------------------
+Movelist Swap          100000   27.695ms       276ns ± 59ns           (247ns ... 5.972us)          312ns      351ns      352ns
+Board From FEN 1       100000   98.149ms       981ns ± 91ns           (954ns ... 9.796us)          980ns      1.026us    1.049us
+Board From FEN 2       100000   99.124ms       991ns ± 105ns          (959ns ... 12.033us)         988ns      1.093us    1.105us
+Subtract usize         100000   11.969ms       119ns ± 30ns           (118ns ... 4.692us)          119ns      123ns      123ns
+Perft2 startpos        100000   1.568s         15.682us ± 1.092us     (14.96us ... 123.478us)      15.744us   18.034us   18.518us
+Perft4 startpos        382      1.996s         5.227ms ± 136.068us    (5.144ms ... 6.115ms)        5.209ms    5.907ms    5.998ms
+Perft6 startpos        1        3.16s          3.16s ± 0ns            (3.16s ... 3.16s)            3.16s      3.16s      3.16s
+Perft2 kiwipete        30235    1.998s         66.096us ± 2.791us     (64.034us ... 248.637us)     66.183us   76.831us   79.455us
+Perft4 kiwipete        18       1.957s         108.737ms ± 1.734ms    (107.707ms ... 113.493ms)    108.359ms  113.493ms  113.493ms
+Eval2 startpos         100000   1.704s         17.043us ± 22.176us    (14.8us ... 992.864us)       16.245us   19.882us   24.209us
+Eval4 startpos         7234     1.999s         276.404us ± 11.829us   (262.813us ... 665.51us)     277.538us  316.802us  324.291us
+Eval2 kiwipete         100000   1.714s         17.145us ± 21.624us    (14.844us ... 1.569ms)       16.347us   19.929us   23.412us
+Eval4 kiwipete         14119    1.9s           134.572us ± 10.599us   (122.167us ... 394.819us)    135.088us  197.55us   206.613us
+```
+
+```
+v0.2.2 vs v0.2.1 - 100 games 40/60
+Elo difference: 85.0 +/- 61.2, LOS: 99.7 %, DrawRatio: 24.0 %
+```
