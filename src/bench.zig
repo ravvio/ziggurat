@@ -4,9 +4,6 @@ const chess = @import("chess.zig");
 const testing = std.testing;
 const engine = @import("engine.zig");
 
-const movelist = @import("./benches/movelist.zig");
-const board = @import("./benches/board.zig");
-const math = @import("./benches/math.zig");
 const perft = @import("./benches/perft.zig");
 const eval = @import("./benches/eval.zig");
 
@@ -22,15 +19,6 @@ pub fn main() !void {
     const allocator = arena.allocator();
     try engine.transposition.initGlobalTranspositionTable(allocator, 64);
     defer engine.transposition.global_tt.deinit();
-
-    try bench.addParam("Movelist Swap", &movelist.SwapBench.init(20), .{
-        .time_budget_ns = 1e9, // 1 second
-    });
-
-    try bench.addParam("Board From FEN 1", &board.ParseFenBench.init("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"), .{});
-    try bench.addParam("Board From FEN 2", &board.ParseFenBench.init("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2"), .{});
-
-    try bench.add("Subtract usize", math.benchSubtractUsize, .{});
 
     try bench.addParam(
         "Perft2 startpos",

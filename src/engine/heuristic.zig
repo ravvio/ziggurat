@@ -9,7 +9,7 @@ pub fn scoreAsMate(score: types.Score) ?i64 {
     if (@abs(score) < max_score) {
         return null;
     }
-    return (@as(i64, @divTrunc((@as(i64, mate_score) - @abs(score)), 2) + 1)) //
+    return (@as(i64, @divTrunc((@as(i64, mate_score) - @abs(score)), 2))) //
     * @as(i64, if (score > 0) 1 else -1);
 }
 
@@ -42,5 +42,5 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
 
     const mg, const eg = res;
 
-    return sign * (middlegame_phase * mg + endgame_phase * eg);
+    return @divTrunc(sign * ((middlegame_phase * mg) + (endgame_phase * eg)), 24);
 }

@@ -82,9 +82,19 @@ pub const TT = struct {
     }
 
     pub fn clear(self: *TT) void {
+        self.used = 0;
         self.data.clearAndFree();
         self.data.ensureTotalCapacity(self.size) catch unreachable;
         self.data.expandToCapacity();
+    }
+
+    /// Reports the occupancy of the table in permillis
+    pub fn occupancy(self: *TT) usize {
+        if (self.size > 0) {
+            return @divTrunc(1000 * self.used, bucket_size * self.size);
+        } else {
+            return 0;
+        }
     }
 
     pub fn index(self: *TT, zobrist_key: u64) usize {

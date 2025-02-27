@@ -30,8 +30,10 @@ pub const Engine = struct {
     search_timer: std.time.Timer = undefined,
     /// Number of nodes searched
     nodes: usize = 0,
-    /// Maximum depth reached
+    /// Depth of iterative deepening reached
     depth: u8 = 0,
+    /// Depth of the deepest variation reached
+    seldepth: u8 = 0,
     /// Currenty ply
     ply: u8 = 0,
     /// The current best move found by the engine
@@ -99,6 +101,7 @@ pub const Engine = struct {
         var tdepth: u8 = 1;
         deepening: while (tdepth <= max) : (tdepth += 1) {
             self.ply = 0;
+            self.seldepth = 0;
 
             const alpha = -heuristic.mate_score - 1;
             const beta = heuristic.mate_score + 1;
@@ -130,10 +133,12 @@ pub const Engine = struct {
 
             // Print info about the search
             if (!self.quiet) {
-                out.print("info depth {} nodes {} time {} ", .{
+                out.print("info depth {} seldepth {} nodes {} time {} hashfull {} ", .{
                     tdepth,
+                    self.seldepth,
                     self.nodes,
                     self.search_timer.read() / std.time.ns_per_ms,
+                    transposition.global_tt.occupancy(),
                 }) catch unreachable;
 
                 if (heuristic.scoreAsMate(self.score)) |matein| {
@@ -182,6 +187,8 @@ pub const Engine = struct {
             self.stop = true;
             return 0;
         }
+
+        self.seldepth = @max(self.seldepth, self.ply);
 
         // Depth 0 reached, proceed to quiescence
         if (depth_ == 0) {

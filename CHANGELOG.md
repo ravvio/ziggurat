@@ -8,10 +8,6 @@
 ```
 benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995
 -----------------------------------------------------------------------------------------------------------------------------
-Movelist Swap          100000   25.681ms       256ns ± 45ns           (237ns ... 3.139us)          251ns      340ns      357ns
-Board From FEN 1       100000   103.177ms      1.031us ± 85ns         (965ns ... 4.093us)          1.03us     1.198us    1.204us
-Board From FEN 2       100000   102.661ms      1.026us ± 74ns         (987ns ... 10.919us)         1.035us    1.07us     1.082us
-Subtract usize         100000   11.944ms       119ns ± 16ns           (118ns ... 1.506us)          119ns      122ns      123ns
 Perft2 startpos        100000   1.386s         13.868us ± 1.778us     (12.804us ... 135.954us)     13.978us   16.31us    18.856us
 Perft4 startpos        375      2.005s         5.347ms ± 126.765us    (5.162ms ... 6.389ms)        5.329ms    6.05ms     6.298ms
 Perft6 startpos        1        3.243s         3.243s ± 0ns           (3.243s ... 3.243s)          3.243s     3.243s     3.243s
@@ -29,10 +25,6 @@ Eval4 kiwipete         330      2s             6.061ms ± 148.079us    (5.909ms 
 ```
 benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995
 -----------------------------------------------------------------------------------------------------------------------------
-Movelist Swap          100000   26.994ms       269ns ± 102ns          (223ns ... 9.422us)          280ns      446ns      1.26us
-Board From FEN 1       100000   116.026ms      1.16us ± 266ns         (1.032us ... 17.897us)       1.194us    1.667us    1.697us
-Board From FEN 2       100000   111.912ms      1.119us ± 107ns        (1.04us ... 10.032us)        1.147us    1.455us    1.475us
-Subtract usize         100000   13.811ms       138ns ± 46ns           (125ns ... 9.788us)          141ns      172ns      172ns
 Perft2 startpos        100000   1.565s         15.651us ± 3.36us      (13.473us ... 88.674us)      15.932us   26.895us   29.246us
 Perft4 startpos        331      1.994s         6.027ms ± 761.297us    (5.482ms ... 10.216ms)       6.022ms    9.501ms    10.17ms
 Perft6 startpos        1        3.609s         3.609s ± 0ns           (3.609s ... 3.609s)          3.609s     3.609s     3.609s
@@ -50,10 +42,6 @@ Eval4 kiwipete         1884     2.01s          1.067ms ± 141.472us    (940.521u
 ```
 benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995
 -----------------------------------------------------------------------------------------------------------------------------
-Movelist Swap          100000   22.815ms       228ns ± 55ns           (207ns ... 9.373us)          234ns      277ns      333ns
-Board From FEN 1       100000   98.615ms       986ns ± 60ns           (957ns ... 7.286us)          986ns      1.026us    1.035us
-Board From FEN 2       100000   99.3ms         993ns ± 61ns           (967ns ... 7.252us)          993ns      1.031us    1.04us
-Subtract usize         100000   11.964ms       119ns ± 19ns           (111ns ... 1.928us)          120ns      123ns      123ns
 Perft2 startpos        100000   1.327s         13.275us ± 1.109us     (12.487us ... 89.109us)      13.391us   15.407us   15.934us
 Perft4 startpos        381      2s             5.249ms ± 140.431us    (5.123ms ... 6.393ms)        5.243ms    5.99ms     6.123ms
 Perft6 startpos        1        4.461s         4.461s ± 0ns           (4.461s ... 4.461s)          4.461s     4.461s     4.461s
@@ -70,10 +58,6 @@ Eval4 kiwipete         100000   1.893s         18.935us ± 16.353us    (16.428us
 - Improved function for determining if a square is attacked
 
 ```
-Movelist Swap          100000   23.588ms       235ns ± 78ns           (206ns ... 18.026us)         246ns      277ns      283ns
-Board From FEN 1       100000   99.555ms       995ns ± 65ns           (959ns ... 3.605us)          1.001us    1.072us    1.091us
-Board From FEN 2       100000   100.678ms      1.006us ± 76ns         (967ns ... 14.081us)         1.011us    1.058us    1.091us
-Subtract usize         100000   12.095ms       120ns ± 138ns          (118ns ... 31.166us)         120ns      124ns      126ns
 Perft2 startpos        100000   1.378s         13.78us ± 894ns        (12.901us ... 56.463us)      13.984us   15.808us   16.351us
 Perft4 startpos        371      1.994s         5.376ms ± 112.334us    (5.292ms ... 6.122ms)        5.363ms    6.057ms    6.107ms
 Perft6 startpos        1        3.245s         3.245s ± 0ns           (3.245s ... 3.245s)          3.245s     3.245s     3.245s
@@ -96,10 +80,6 @@ Elo difference: 7.5 +/- 27.4, LOS: 70.4 %, DrawRatio: 84.9 %
 ```
 benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995
 -----------------------------------------------------------------------------------------------------------------------------
-Movelist Swap          100000   26.15ms        261ns ± 164ns          (237ns ... 29.861us)         269ns      347ns      396ns
-Board From FEN 1       100000   99.893ms       998ns ± 249ns          (967ns ... 31.09us)          997ns      1.044us    1.092us
-Board From FEN 2       100000   100.984ms      1.009us ± 265ns        (974ns ... 31.164us)         1.015us    1.057us    1.098us
-Subtract usize         100000   12.013ms       120ns ± 96ns           (118ns ... 29.619us)         120ns      123ns      123ns
 Perft2 startpos        100000   1.393s         13.93us ± 1.513us      (12.804us ... 82.146us)      14.101us   16.228us   17.447us
 Perft4 startpos        369      2.003s         5.43ms ± 129.093us     (5.259ms ... 6.33ms)         5.422ms    6.13ms     6.295ms
 Perft6 startpos        1        3.291s         3.291s ± 0ns           (3.291s ... 3.291s)          3.291s     3.291s     3.291s
@@ -117,14 +97,11 @@ Elo difference: 52.5 +/- 38.7, LOS: 99.5 %, DrawRatio: 67.0 %
 ```
 
 ### v0.2.2 - Piece Square Values
+- Add PeSTO tables and use them in the heuristic
 
 ```
 benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995
 -----------------------------------------------------------------------------------------------------------------------------
-Movelist Swap          100000   27.695ms       276ns ± 59ns           (247ns ... 5.972us)          312ns      351ns      352ns
-Board From FEN 1       100000   98.149ms       981ns ± 91ns           (954ns ... 9.796us)          980ns      1.026us    1.049us
-Board From FEN 2       100000   99.124ms       991ns ± 105ns          (959ns ... 12.033us)         988ns      1.093us    1.105us
-Subtract usize         100000   11.969ms       119ns ± 30ns           (118ns ... 4.692us)          119ns      123ns      123ns
 Perft2 startpos        100000   1.568s         15.682us ± 1.092us     (14.96us ... 123.478us)      15.744us   18.034us   18.518us
 Perft4 startpos        382      1.996s         5.227ms ± 136.068us    (5.144ms ... 6.115ms)        5.209ms    5.907ms    5.998ms
 Perft6 startpos        1        3.16s          3.16s ± 0ns            (3.16s ... 3.16s)            3.16s      3.16s      3.16s
@@ -139,4 +116,26 @@ Eval4 kiwipete         14119    1.9s           134.572us ± 10.599us   (122.167u
 ```
 v0.2.2 vs v0.2.1 - 100 games 40/60
 Elo difference: 85.0 +/- 61.2, LOS: 99.7 %, DrawRatio: 24.0 %
+```
+
+### v0.2.3 - SIMD optimization for Piece Square Values
+- Use `@Vector` to optimize the piece value heuristic
+
+```
+benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995
+-----------------------------------------------------------------------------------------------------------------------------
+Perft2 startpos        100000   1.344s         13.446us ± 1.323us     (12.738us ... 155.723us)     13.507us   16.029us   17.099us
+Perft4 startpos        386      1.999s         5.178ms ± 138.97us     (5.102ms ... 6.093ms)        5.168ms    5.968ms    6.065ms
+Perft6 startpos        1        3.154s         3.154s ± 0ns           (3.154s ... 3.154s)          3.154s     3.154s     3.154s
+Perft2 kiwipete        36610    1.997s         54.567us ± 3.104us     (52.62us ... 322.232us)      54.69us    63.854us   65.727us
+Perft4 kiwipete        18       1.917s         106.501ms ± 2.141ms    (105.629ms ... 113.502ms)    105.885ms  113.502ms  113.502ms
+Eval2 startpos         100000   1.841s         18.41us ± 20.746us     (16.383us ... 767.189us)     17.588us   21.634us   26.527us
+Eval4 startpos         31103    1.996s         64.192us ± 11.417us    (60.521us ... 537.143us)     63.61us    81.516us   173.546us
+Eval2 kiwipete         100000   1.77s          17.701us ± 21.628us    (15.63us ... 922.618us)      16.92us    20.034us   24.463us
+Eval4 kiwipete         31319    1.914s         61.115us ± 12.7us      (56.005us ... 642.25us)      60.868us   101.107us  149.763us
+```
+
+```
+v0.2.3 vs v0.2.2 - 100 games 40/60
+Elo difference: 127.0 +/- 65.3, LOS: 100.0 %, DrawRatio: 19.0 %
 ```
