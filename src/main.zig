@@ -93,7 +93,9 @@ pub fn run_eval(args: *std.process.ArgIterator) !void {
         }
     }
 
-    var e = engine.Engine.init(allocator);
+    var e = engine.Engine.init(allocator) catch {
+        @panic("could not initialize engine");
+    };
     defer e.deinit();
 
     if (color) {
@@ -107,11 +109,13 @@ pub fn run_eval(args: *std.process.ArgIterator) !void {
 }
 
 pub fn main() !void {
-    chess.tables.initAll();
-
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
+
+    chess.tables.initAll();
+    try engine.transposition.initGlobalTranspositionTable(allocator, 64);
+    defer engine.transposition.global_tt.deinit();
 
     var args = try std.process.argsWithAllocator(allocator);
     _ = args.next();

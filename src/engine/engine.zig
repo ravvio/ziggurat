@@ -2,6 +2,7 @@ const std = @import("std");
 const chess = @import("../chess.zig");
 const types = @import("types.zig");
 const heuristic = @import("heuristic.zig");
+const transposition = @import("transposition.zig");
 
 const NodeType = enum {
     Root,
@@ -43,7 +44,7 @@ pub const Engine = struct {
     /// History of hashes in the search
     hash_history: std.ArrayList(u64),
 
-    pub fn init(allocator: std.mem.Allocator) Engine {
+    pub fn init(allocator: std.mem.Allocator) !Engine {
         const hash_history = std.ArrayList(u64).initCapacity(allocator, max_game_ply) catch unreachable;
         return .{
             .hash_history = hash_history,
@@ -188,20 +189,59 @@ pub const Engine = struct {
         // After this point we can consider this serched node
         self.nodes += 1;
 
-        // === STEP 2 - Preliminary checks
-
         // - Check if the position is a draw
         if (node_type != NodeType.Root and self.isDraw(board)) {
             return 0;
         }
 
-        // === STEP 3 - Search
-
-        // We make use of alpha beta pruning for not searching moves that
-        // would surely be discarded by our opponent.
+        // Convert into variables
         const depth = depth_;
         var alpha = alpha_;
-        const beta = beta_;
+        var beta = beta_;
+
+        // === STEP 2 - Transposition
+        // Save this move to use in move ordering
+        var hashmove: u32 = 0;
+        if (transposition.global_tt.probe(zobrist_key)) |res| {
+            var score = res.score;
+            // Adjust mate score
+            // TODO do this only for exact?
+            if (score > heuristic.max_score) {
+                score -= self.ply;
+            } else if (score < -heuristic.max_score) {
+                score += self.ply;
+            }
+
+            hashmove = res.move;
+            // Set bestmove if we are in root
+            if (node_type == NodeType.Root) {
+                self.best_move = chess.ChessMove{ .x = @as(usize, hashmove) };
+            }
+
+            // Use transposition score only if not root and depth is greater or equal to
+            // the current
+            if (node_type != NodeType.Root and res.depth >= depth_) {
+                // Based on flag return score or set alpha/beta
+                switch (res.flag) {
+                    transposition.TranspositionFlag.Exact => {
+                        return score;
+                    },
+                    transposition.TranspositionFlag.Alpha => {
+                        alpha = @max(alpha, score);
+                    },
+                    transposition.TranspositionFlag.Beta => {
+                        beta = @min(beta, score);
+                    },
+                    else => {},
+                }
+                // Fail hard
+                if (alpha >= beta) {
+                    return score;
+                }
+            }
+        }
+
+        // === STEP 3 - Search
 
         // Depth 0 reached, proceed to static evaluation
         if (depth == 0) {
@@ -210,6 +250,7 @@ pub const Engine = struct {
 
         // Start with the worst possible evaluation
         var best_eval = -heuristic.mate_score + self.ply;
+        var best_move = chess.ChessMove{};
 
         // - Generate moves
         var movelist = chess.Movelist.new();
@@ -227,7 +268,7 @@ pub const Engine = struct {
         }
 
         // - Score moves
-        movelist.scoreMoves();
+        movelist.scoreMoves(hashmove);
 
         // Iterate all moves
         while (movelist.pick()) |move| {
@@ -266,6 +307,7 @@ pub const Engine = struct {
             if (leaf_eval > best_eval) {
                 best_eval = leaf_eval;
 
+                best_move = move;
                 // If this is a root node, set best move
                 if (node_type == NodeType.Root) {
                     self.best_move = move;
@@ -295,6 +337,16 @@ pub const Engine = struct {
                 best_eval = 0;
             }
         }
+
+        // Set transposition
+        const flag = if (best_eval >= beta) transposition.TranspositionFlag.Alpha else if (alpha != alpha_) transposition.TranspositionFlag.Exact else transposition.TranspositionFlag.Beta;
+        transposition.global_tt.put(
+            zobrist_key,
+            depth,
+            best_move,
+            best_eval,
+            flag,
+        );
 
         return best_eval;
     }

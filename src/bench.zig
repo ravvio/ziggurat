@@ -2,6 +2,7 @@ const zbench = @import("zbench");
 const std = @import("std");
 const chess = @import("chess.zig");
 const testing = std.testing;
+const engine = @import("engine.zig");
 
 const movelist = @import("./benches/movelist.zig");
 const board = @import("./benches/board.zig");
@@ -15,6 +16,12 @@ pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
     var bench = zbench.Benchmark.init(std.heap.page_allocator, .{});
     defer bench.deinit();
+
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+    try engine.transposition.initGlobalTranspositionTable(allocator, 64);
+    defer engine.transposition.global_tt.deinit();
 
     try bench.addParam("Movelist Swap", &movelist.SwapBench.init(20), .{
         .time_budget_ns = 1e9, // 1 second

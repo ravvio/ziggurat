@@ -13,7 +13,7 @@ pub const Uci = struct {
     search_thread: ?std.Thread,
 
     pub fn init(allocator: std.mem.Allocator) !Uci {
-        var engine = Engine.init(allocator);
+        var engine = try Engine.init(allocator);
         engine.quiet = false;
         return .{
             .board = try chess.Board.fromFen(allocator, chess.constants.Fen.STARTPOS),
@@ -87,7 +87,7 @@ pub const Uci = struct {
             // Ask for idetification
             else if (std.mem.eql(u8, cmd.?, "uci")) {
                 _ = try stdout.writeAll(
-                    \\id name ziggurat_0.1.1
+                    \\id name ziggurat_0.1.2
                     \\id author Alessio Raviola
                     \\
                 );

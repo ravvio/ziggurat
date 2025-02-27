@@ -21,9 +21,13 @@ pub const EvalBench = struct {
             @panic("could not create bench board form fen");
         };
         defer board.deinit();
-        var e = engine.Engine.init(alloc);
+        var e = engine.Engine.init(alloc) catch {
+            @panic("could not initialize engine");
+        };
         e.quiet = true;
         defer e.deinit();
+
+        engine.transposition.global_tt.clear();
 
         if (board.state.current_side) {
             e.search(&board, true, self.depth);

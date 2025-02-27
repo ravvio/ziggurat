@@ -50,12 +50,17 @@ pub const Movelist = struct {
         std.mem.swap(ChessMove, &self.list[a], &self.list[b]);
     }
 
-    pub fn scoreMoves(self: *Movelist) void {
+    pub fn scoreMoves(self: *Movelist, hashmove: u32) void {
         var i: usize = 0;
         while (i < self.count) : (i += 1) {
             var move = &self.list[i];
-            const score = mvv_lva[move.capture()][move.piece()];
-            move.setSortScore(score);
+            // Order hash move first
+            if (@as(u32, @truncate(move.*.x)) == hashmove) {
+                move.setSortScore(max_score);
+            } else {
+                const score = mvv_lva[move.capture()][move.piece()];
+                move.setSortScore(score);
+            }
         }
     }
 
