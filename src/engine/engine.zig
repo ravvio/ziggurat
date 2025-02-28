@@ -6,6 +6,7 @@ const transposition = @import("transposition.zig");
 
 const NodeType = enum {
     Root,
+    PV,
     Other,
 };
 
@@ -40,6 +41,10 @@ pub const Engine = struct {
     best_move: chess.ChessMove = chess.ChessMove{},
     /// The previous current best move found by the engine
     prev_best_move: chess.ChessMove = chess.ChessMove{},
+    /// Principal Variation found by the engine
+    principal_variation: [max_ply][max_ply]chess.ChessMove = std.mem.zeroes([max_ply][max_ply]chess.ChessMove),
+    /// Length of the pricipal variation
+    principal_variation_size: [max_ply]usize = std.mem.zeroes([max_ply]usize),
     /// The current eval of the engine
     score: types.Score = 0,
 
@@ -57,6 +62,9 @@ pub const Engine = struct {
         self.hash_history.clearAndFree();
         self.nodes = 0;
         self.best_move = chess.ChessMove{};
+        for (&self.principal_variation_size) |*size| {
+            size.* = 0;
+        }
     }
 
     pub fn deinit(self: *Engine) void {
@@ -142,10 +150,19 @@ pub const Engine = struct {
                 }) catch unreachable;
 
                 if (heuristic.scoreAsMate(self.score)) |matein| {
-                    out.print("score mate {}", .{matein}) catch unreachable;
+                    out.print("score mate {} ", .{matein}) catch unreachable;
                 } else {
-                    out.print("score cp {}", .{self.score}) catch unreachable;
+                    out.print("score cp {} ", .{self.score}) catch unreachable;
                 }
+
+                if (self.principal_variation_size[0] > 0) {
+                    out.print("pv ", .{}) catch unreachable;
+                    var i: usize = 0;
+                    while (i < self.principal_variation_size[0]) : (i += 1) {
+                        out.print("{} ", .{self.principal_variation[0][i]}) catch unreachable;
+                    }
+                }
+
                 out.writeByte('\n') catch unreachable;
                 bufout.flush() catch unreachable;
             }
@@ -293,15 +310,47 @@ pub const Engine = struct {
             self.hash_history.append(zobrist_key) catch unreachable;
 
             // Evaluate the leaf
-            const leaf_eval = -negamax(
-                self,
-                board,
-                !color,
-                NodeType.Other,
-                depth - 1,
-                -beta,
-                -alpha,
-            );
+            var score: types.Score = undefined;
+
+            // PVS
+            // When we are not in the principal variation, i.e we have already
+            // found a move that raises the alpha, try to do a search with a
+            // null window, this is because we believe that the move we have
+            // already found is the best one. This shallow search only serves
+            // to confirm this hypotesis. If the search fails, i.e we end up
+            // with a value goes out of alpha-beta, we need to do a full search
+            // More: https://www.chessprogramming.org/Principal_Variation_Search
+            if (node_type != NodeType.Other and movesfound == 1) {
+                score = -self.negamax(
+                    board,
+                    !color,
+                    NodeType.PV,
+                    depth - 1,
+                    -beta,
+                    -alpha,
+                );
+            } else {
+                score = -self.negamax(
+                    board,
+                    !color,
+                    NodeType.Other,
+                    depth - 1,
+                    -alpha - 1,
+                    -alpha,
+                );
+            }
+            // Research for non-PV nodes if the the score has surpassed bound
+            // i.e we have a new PV
+            if (node_type != NodeType.Other and score > alpha) {
+                score = -self.negamax(
+                    board,
+                    !color,
+                    NodeType.PV,
+                    depth - 1,
+                    -beta,
+                    -alpha,
+                );
+            }
 
             // Undo stuff
             self.ply -= 1;
@@ -312,8 +361,8 @@ pub const Engine = struct {
 
             // - Alpha Beta Pruning
             // We have found a better move
-            if (leaf_eval > best_score) {
-                best_score = leaf_eval;
+            if (score > best_score) {
+                best_score = score;
 
                 best_move = move;
                 // If this is a root node, set best move
@@ -321,12 +370,19 @@ pub const Engine = struct {
                     self.best_move = move;
                 }
 
+                // Add/set principal variation
+                self.principal_variation[self.ply][0] = move;
+                self.principal_variation_size[self.ply] = self.principal_variation_size[self.ply + 1] + 1;
+                std.mem.copyForwards(
+                    chess.ChessMove,
+                    self.principal_variation[self.ply][1..(self.principal_variation_size[self.ply])],
+                    self.principal_variation[self.ply + 1][0..(self.principal_variation_size[self.ply + 1])],
+                );
+
                 // If the eval surpasses alpha we have a new cutoff
                 if (best_score > alpha) {
                     // If alpha surpasses beta we do not need to search
-                    // other moves. This move will definitely be rejected
-                    // by our opponent, even if we find a better one
-                    // it does not matter
+                    // other moves.
                     if (best_score >= beta) {
                         return beta;
                     }
