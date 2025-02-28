@@ -56,6 +56,7 @@ pub const Movelist = struct {
             var move = &self.list[i];
             // Order hash move first
             if (@as(u32, @truncate(move.*.x)) == hashmove) {
+                // std.debug.print("setting max {}\n", .{move});
                 move.setSortScore(max_score);
             } else {
                 const score = mvv_lva[move.capture()][move.piece()];
@@ -72,8 +73,8 @@ pub const Movelist = struct {
         }
         for (0..self.count - 1) |i| {
             if (self.list[i].getSortScore() > self.list[self.count - 1].getSortScore()) {
+                if (self.list[i].getSortScore() == 255) {}
                 self.swap(i, self.count - 1);
-                break;
             }
         }
         self.count -= 1;

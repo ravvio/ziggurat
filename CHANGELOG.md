@@ -139,3 +139,20 @@ Eval4 kiwipete         31319    1.914s         61.115us ± 12.7us      (56.005us
 v0.2.3 vs v0.2.2 - 100 games 40/60
 Elo difference: 127.0 +/- 65.3, LOS: 100.0 %, DrawRatio: 19.0 %
 ```
+
+### v0.2.4 - Hash move first
+- Fix a bug where the hash move was not evaluated first
+
+```
+benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995
+-----------------------------------------------------------------------------------------------------------------------------
+Perft2 startpos        100000   1.399s         13.99us ± 2.757us      (12.759us ... 159.245us)     13.981us   23.207us   26.102us
+Perft4 startpos        368      1.997s         5.428ms ± 322.773us    (5.125ms ... 8.103ms)        5.498ms    6.667ms    6.78ms
+Perft6 startpos        1        3.262s         3.262s ± 0ns           (3.262s ... 3.262s)          3.262s     3.262s     3.262s
+Perft2 kiwipete        34313    1.988s         57.96us ± 3.306us      (54.598us ... 234.55us)      58.099us   69.318us   75.013us
+Perft4 kiwipete        18       2.022s         112.373ms ± 3.357ms    (109.607ms ... 123.531ms)    112.854ms  123.531ms  123.531ms
+Eval2 startpos         100000   1.778s         17.785us ± 18.639us    (15.255us ... 933.761us)     16.937us   21.956us   30.614us
+Eval4 startpos         32158    2.007s         62.439us ± 13.212us    (55.721us ... 388.612us)     63.211us   111.076us  175.147us
+Eval2 kiwipete         100000   1.899s         18.999us ± 23.677us    (15.398us ... 908.25us)      17.81us    30.667us   34.303us
+Eval4 kiwipete         34162    1.974s         57.804us ± 13.664us    (51.52us ... 498.797us)      56.779us   106.5us    151.401us
+```

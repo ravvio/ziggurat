@@ -283,6 +283,9 @@ pub const Engine = struct {
                 continue;
             }
 
+            // Assert that the first move is the hashmove if we found one
+            std.debug.assert(hashmove == 0 or movesfound > 0 or move.withoutSortScore() == hashmove);
+
             movesfound += 1;
 
             // Increment ply, add to history, ecc..

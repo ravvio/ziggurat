@@ -107,10 +107,12 @@ pub const TT = struct {
         self: *TT,
         zobrist_key: u64,
         depth: u8,
-        move: chess.ChessMove,
+        move_: chess.ChessMove,
         score: types.Score,
         flag: TranspositionFlag,
     ) void {
+        var move = move_;
+        move.removeSortScore();
         self.data.items[self.index(zobrist_key)].store(
             Transposition{
                 .depth = depth,

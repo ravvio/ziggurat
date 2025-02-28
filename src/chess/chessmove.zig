@@ -25,8 +25,7 @@ pub const ChessMove = struct {
         pub const THREE: usize = 0b111;
         pub const SIX: usize = 0b111111;
         pub const EIGHT: usize = 0b11111111;
-        pub const MOVEMASK: usize = 0x00_00_00_00_00_FF_FF_FF;
-        pub const SORTMASK: usize = bits.EIGHT << bits.SORT;
+        pub const no_sort_mask: usize = 0x00FF_FFFF;
     };
 
     pub const shift = struct {
@@ -87,11 +86,20 @@ pub const ChessMove = struct {
     }
 
     pub fn getSortScore(m: ChessMove) usize {
-        return (m.x >> shift.SORT) & bits.EIGHT;
+        return m.x >> shift.SORT;
     }
 
     pub fn setSortScore(m: *ChessMove, v: u8) void {
         m.x |= (@as(usize, v) << shift.SORT);
+    }
+
+    pub fn removeSortScore(m: *ChessMove) void {
+        m.x &= bits.no_sort_mask;
+        std.debug.assert(m.getSortScore() == 0);
+    }
+
+    pub fn withoutSortScore(m: *const ChessMove) usize {
+        return m.x & bits.no_sort_mask;
     }
 
     pub fn onlyMove(m: ChessMove) usize {
