@@ -22,6 +22,7 @@ fn test_mate(
 
     const expected = try board.parseMove(correct);
     e.search(&board, true, depth * 2);
+    e.best_move.removeSortScore();
 
     std.testing.expectEqual(expected, e.best_move) catch |err| {
         std.debug.print("expected: {}, jound: {}\n", .{ expected, e.best_move });
