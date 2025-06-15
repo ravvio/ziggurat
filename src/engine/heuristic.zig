@@ -4,6 +4,7 @@ const tables = @import("heuristic_tables.zig");
 
 pub const mate_score: types.Score = 100_000;
 pub const max_score: types.Score = 99_000;
+pub const max_mate: u32 = 256;
 
 pub fn scoreAsMate(score: types.Score) ?i64 {
     if (@abs(score) < max_score) {

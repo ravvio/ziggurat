@@ -409,6 +409,24 @@ pub const Board = struct {
         b.occupied = b.colors[0] | b.colors[1];
     }
 
+    pub fn makeNullMove(
+        b: *Board,
+    ) void {
+        const state = b.state;
+        b.history.append(state) catch {
+            @panic("Tried to append to history but failed");
+        };
+
+        if (b.state.en_passant != null) {
+            b.removeEnPassant();
+        }
+        b.swapSide();
+    }
+
+    pub fn unmakeNullMove(b: *Board) void {
+        b.state = b.history.pop() orelse unreachable;
+    }
+
     pub fn swapSide(b: *Board) void {
         b.state.zobrist_key ^= b.zobrist_values.color;
         b.state.current_side = !b.state.current_side;

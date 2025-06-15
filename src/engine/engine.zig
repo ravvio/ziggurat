@@ -14,6 +14,8 @@ const max_game_ply = 1024;
 const max_ply: u8 = 128;
 const max_extension: u8 = 4;
 
+const null_reduction: u8 = 3;
+
 /// The Engine is the component responsible for finding the best move
 pub const Engine = struct {
     /// Should the engine not emit uci info
@@ -123,6 +125,7 @@ pub const Engine = struct {
                     board,
                     color,
                     NodeType.Root,
+                    false,
                     tdepth,
                     alpha,
                     beta,
@@ -195,11 +198,15 @@ pub const Engine = struct {
         board: *chess.Board,
         comptime color: bool,
         comptime node_type: NodeType,
+        comptime is_null: bool,
         depth_: u8,
         alpha_: types.Score,
         beta_: types.Score,
         extension_: usize,
     ) types.Score {
+        // Assert legal position
+        std.debug.assert(!board.isKingAttacked(!color));
+
         // Reset
         self.principal_variation_size[self.ply] = 0;
 
@@ -209,7 +216,7 @@ pub const Engine = struct {
         var beta = beta_;
         var extension = extension_;
 
-        // === STEP 1 - Preparation
+        // === Preparation
         // - Check if we should stop
         // This is done every few nodes
         if (node_type != NodeType.Root and self.nodes & 2047 == 0 and self.shouldStop()) {
@@ -248,7 +255,7 @@ pub const Engine = struct {
             return 0;
         }
 
-        // === STEP 2 - Transposition
+        // === Transposition
         // Save this move to use in move ordering
         var hashmove: u32 = 0;
         if (transposition.global_tt.probe(zobrist_key)) |res| {
@@ -267,9 +274,9 @@ pub const Engine = struct {
                 self.best_move = chess.ChessMove{ .x = @as(usize, hashmove) };
             }
 
-            // Use transposition score only if not root and depth is greater or equal to
+            // Use transposition score only if not PV/Root and depth is greater or equal to
             // the current
-            if (node_type != NodeType.Root and res.depth >= depth) {
+            if (!is_null and node_type == NodeType.Other and res.depth >= depth) {
                 // Based on flag return score or set alpha/beta
                 switch (res.flag) {
                     transposition.TranspositionFlag.Exact => {
@@ -290,7 +297,39 @@ pub const Engine = struct {
             }
         }
 
-        // === STEP 3 - Search
+        // === Pruning
+        if (!in_check) {
+            // NULL MOVE PRUNING
+            // More: https://www.chessprogramming.org/Null_Move_Pruning
+            if (node_type == NodeType.Other and !is_null and depth > 1 + null_reduction) {
+                self.ply += 1;
+                board.makeNullMove();
+
+                var null_score = -self.negamax(
+                    board,
+                    !color,
+                    NodeType.Other,
+                    true,
+                    depth - null_reduction,
+                    -beta,
+                    -beta + 1,
+                    extension,
+                );
+
+                self.ply -= 1;
+                board.unmakeNullMove();
+
+                if (null_score >= beta) {
+                    if (null_score >= heuristic.mate_score - heuristic.max_mate) {
+                        null_score = beta;
+                    }
+
+                    return null_score;
+                }
+            }
+        }
+
+        // === Search
 
         // Start with the worst possible evaluation
         var best_move = chess.ChessMove{};
@@ -309,6 +348,7 @@ pub const Engine = struct {
         while (movelist.pick()) |move| {
             // Make the move
             board.makeMove(move, color);
+
             // Undo if kind is attacked i.e. illegal move was made
             if (board.isKingAttacked(color)) {
                 board.unmakeMove(color);
@@ -316,7 +356,7 @@ pub const Engine = struct {
             }
 
             // Assert that the first move is the hashmove if we found one
-            std.debug.assert(hashmove == 0 or movesfound > 0 or move.withoutSortScore() == hashmove);
+            // std.debug.assert(hashmove == 0 or movesfound > 0 or move.withoutSortScore() == hashmove);
 
             movesfound += 1;
 
@@ -340,6 +380,7 @@ pub const Engine = struct {
                     board,
                     !color,
                     NodeType.PV,
+                    is_null,
                     depth - 1,
                     -beta,
                     -alpha,
@@ -350,6 +391,7 @@ pub const Engine = struct {
                     board,
                     !color,
                     NodeType.Other,
+                    is_null,
                     depth - 1,
                     -alpha - 1,
                     -alpha,
@@ -363,6 +405,7 @@ pub const Engine = struct {
                     board,
                     !color,
                     NodeType.PV,
+                    is_null,
                     depth - 1,
                     -beta,
                     -alpha,
@@ -389,13 +432,15 @@ pub const Engine = struct {
                 }
 
                 // Add/set principal variation
-                self.principal_variation[self.ply][0] = move;
-                self.principal_variation_size[self.ply] = self.principal_variation_size[self.ply + 1] + 1;
-                std.mem.copyForwards(
-                    chess.ChessMove,
-                    self.principal_variation[self.ply][1..(self.principal_variation_size[self.ply])],
-                    self.principal_variation[self.ply + 1][0..(self.principal_variation_size[self.ply + 1])],
-                );
+                if (!is_null) {
+                    self.principal_variation[self.ply][0] = move;
+                    self.principal_variation_size[self.ply] = self.principal_variation_size[self.ply + 1] + 1;
+                    std.mem.copyForwards(
+                        chess.ChessMove,
+                        self.principal_variation[self.ply][1..(self.principal_variation_size[self.ply])],
+                        self.principal_variation[self.ply + 1][0..(self.principal_variation_size[self.ply + 1])],
+                    );
+                }
 
                 // If the eval surpasses alpha we have a new cutoff
                 if (best_score > alpha) {

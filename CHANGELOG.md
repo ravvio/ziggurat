@@ -215,3 +215,27 @@ Eval8 kiwipete         1        1.254s         1.254s ± 0ns           (1.254s .
 v0.3.1 vs v0.3.1 - 100 games 40/60
 Elo difference: 6.9 +/- 58.2, LOS: 59.3 %, DrawRatio: 28.0 %
 ```
+
+### v0.4 - Null Move Pruning
+
+```
+benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995
+-----------------------------------------------------------------------------------------------------------------------------
+Perft2 startpos        100000   1.476s         14.764us ± 5.713us     (12.966us ... 941.739us)     15.081us   25.033us   28.536us
+Perft4 startpos        330      1.993s         6.039ms ± 351.304us    (5.612ms ... 8.633ms)        6.152ms    7.194ms    7.505ms
+Perft6 startpos        1        3.53s          3.53s ± 0ns            (3.53s ... 3.53s)            3.53s      3.53s      3.53s
+Perft2 kiwipete        33481    2.012s         60.111us ± 13.283us    (53.389us ... 977.389us)     60.75us    79.283us   84.677us
+Perft4 kiwipete        16       1.96s          122.549ms ± 1.614ms    (120.46ms ... 126.496ms)     123.421ms  126.496ms  126.496ms
+Eval2 startpos         64324    2.015s         31.332us ± 29.54us     (25.032us ... 1.26ms)        29.638us   64.313us   160.136us
+Eval4 startpos         6450     2.048s         317.537us ± 52.261us   (272.547us ... 1.305ms)      321.254us  560.75us   655.563us
+Eval6 startpos         309      1.902s         6.156ms ± 436.474us    (5.48ms ... 8.385ms)         6.372ms    7.643ms    7.714ms
+Eval8 startpos         4        477.878ms      119.469ms ± 739.927us  (118.738ms ... 120.485ms)    120.485ms  120.485ms  120.485ms
+Eval2 kiwipete         64330    2.016s         31.346us ± 31.564us    (24.442us ... 1.107ms)       30.197us   51.63us    148.476us
+Eval4 kiwipete         2074     1.932s         931.689us ± 123.878us  (842.096us ... 3.392ms)      942.956us  1.297ms    1.469ms
+Eval6 kiwipete         238      1.694s         7.119ms ± 387.372us    (6.791ms ... 10.187ms)       7.203ms    8.271ms    9.024ms
+Eval8 kiwipete         1        658.766ms      658.766ms ± 0ns        (658.766ms ... 658.766ms)    658.766ms  658.766ms  658.766ms
+```
+
+```
+Elo difference: 52.5 +/- 58.3, LOS: 96.2 %, DrawRatio: 29.0 %
+```
