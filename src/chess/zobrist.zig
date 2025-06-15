@@ -9,7 +9,7 @@ pub const ZobristValues = struct {
     en_passant: [64]u64,
 
     pub fn new() ZobristValues {
-        var rand = std.rand.DefaultPrng.init(SEED);
+        var rand = std.Random.DefaultPrng.init(SEED);
         var z: ZobristValues = undefined;
 
         for (&z.pieces) |*side| {

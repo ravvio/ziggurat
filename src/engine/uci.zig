@@ -45,7 +45,7 @@ pub const Uci = struct {
 
             // Trim carriage return and split on space
             const line = std.mem.trim(u8, in.?, "\r");
-            var tokens = std.mem.split(u8, line, " ");
+            var tokens = std.mem.splitScalar(u8, line, ' ');
 
             // First token is the command
             const cmd = tokens.next();
@@ -87,7 +87,7 @@ pub const Uci = struct {
             // Ask for idetification
             else if (std.mem.eql(u8, cmd.?, "uci")) {
                 _ = try stdout.writeAll(
-                    \\id name ziggurat_0.3.0
+                    \\id name ziggurat_0.3.1
                     \\id author Alessio Raviola
                     \\
                 );
@@ -173,7 +173,7 @@ pub const Uci = struct {
 
     fn handleGoInfo(
         self: *Uci,
-        tokens: *std.mem.SplitIterator(u8, std.mem.DelimiterType.sequence),
+        tokens: *std.mem.SplitIterator(u8, std.mem.DelimiterType.scalar),
     ) struct { u64, ?u8 } {
         var movetime: ?u64 = null;
         var mytime: ?u64 = null;

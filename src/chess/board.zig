@@ -40,7 +40,7 @@ pub const Board = struct {
     }
 
     pub fn setFen(self: *Board, fen: []const u8) !void {
-        var it = std.mem.split(u8, fen, " ");
+        var it = std.mem.splitScalar(u8, fen, ' ');
 
         self.history.clearAndFree();
 
@@ -368,7 +368,7 @@ pub const Board = struct {
     /// Unmake a move.
     /// The color is the side after the undo
     pub fn unmakeMove(b: *Board, comptime color: bool) void {
-        b.state = b.history.pop();
+        b.state = b.history.pop() orelse unreachable;
 
         // Shorthands
         const move = b.state.next_move;
@@ -677,6 +677,17 @@ pub const Board = struct {
     pub fn isKingAttacked(b: *const Board, comptime color: bool) bool {
         const sq = @ctz(b.boards[@intFromBool(color)][pieces.KING]);
         return b.squareAttacked(color, sq);
+    }
+
+    pub fn inCheck(b: *const Board, comptime color: bool) bool {
+        const sq = @ctz(b.boards[@intFromBool(color)][pieces.KING]);
+        const occupied = b.occupied;
+        const attacker = @intFromBool(!color);
+
+        return ((b.boards[attacker][pieces.QUEEN] | b.boards[attacker][pieces.ROOK]) & tables.rookAttacks(sq, occupied) != 0 or
+            (b.boards[attacker][pieces.QUEEN] | b.boards[attacker][pieces.BISHOP]) & tables.bishopAttacks(sq, occupied) != 0 or
+            b.boards[attacker][pieces.KNIGHT] & tables.knightAttacks(sq) != 0 or
+            b.boards[attacker][pieces.PAWN] & tables.pawnAttacks(color, sq) != 0);
     }
 };
 

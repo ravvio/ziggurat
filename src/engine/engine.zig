@@ -12,6 +12,7 @@ const NodeType = enum {
 
 const max_game_ply = 1024;
 const max_ply: u8 = 128;
+const max_extension: u8 = 4;
 
 /// The Engine is the component responsible for finding the best move
 pub const Engine = struct {
@@ -125,6 +126,7 @@ pub const Engine = struct {
                     tdepth,
                     alpha,
                     beta,
+                    0,
                 );
 
                 if (self.stop) {
@@ -196,9 +198,16 @@ pub const Engine = struct {
         depth_: u8,
         alpha_: types.Score,
         beta_: types.Score,
+        extension_: usize,
     ) types.Score {
         // Reset
         self.principal_variation_size[self.ply] = 0;
+
+        // Convert into variables
+        var depth = depth_;
+        var alpha = alpha_;
+        var beta = beta_;
+        var extension = extension_;
 
         // === STEP 1 - Preparation
         // - Check if we should stop
@@ -210,8 +219,16 @@ pub const Engine = struct {
 
         self.seldepth = @max(self.seldepth, self.ply);
 
+        // - Check extension
+        // Never enter quiescence if in check
+        const in_check = board.inCheck(color);
+        if (in_check and (depth == 0 or extension < max_extension)) {
+            extension += 1;
+            depth += 1;
+        }
+
         // Depth 0 reached, proceed to quiescence
-        if (depth_ == 0) {
+        if (depth == 0) {
             return self.quiescence(
                 board,
                 color,
@@ -230,11 +247,6 @@ pub const Engine = struct {
         if (node_type != NodeType.Root and self.isDraw(board)) {
             return 0;
         }
-
-        // Convert into variables
-        const depth = depth_;
-        var alpha = alpha_;
-        var beta = beta_;
 
         // === STEP 2 - Transposition
         // Save this move to use in move ordering
@@ -257,7 +269,7 @@ pub const Engine = struct {
 
             // Use transposition score only if not root and depth is greater or equal to
             // the current
-            if (node_type != NodeType.Root and res.depth >= depth_) {
+            if (node_type != NodeType.Root and res.depth >= depth) {
                 // Based on flag return score or set alpha/beta
                 switch (res.flag) {
                     transposition.TranspositionFlag.Exact => {
@@ -331,6 +343,7 @@ pub const Engine = struct {
                     depth - 1,
                     -beta,
                     -alpha,
+                    extension,
                 );
             } else {
                 score = -self.negamax(
@@ -340,6 +353,7 @@ pub const Engine = struct {
                     depth - 1,
                     -alpha - 1,
                     -alpha,
+                    extension,
                 );
             }
             // Research for non-PV nodes if the the score has surpassed bound
@@ -352,12 +366,13 @@ pub const Engine = struct {
                     depth - 1,
                     -beta,
                     -alpha,
+                    extension,
                 );
             }
 
             // Undo stuff
             self.ply -= 1;
-            _ = self.hash_history.pop();
+            _ = self.hash_history.pop() orelse unreachable;
 
             // Unmake move
             board.unmakeMove(color);
@@ -398,7 +413,7 @@ pub const Engine = struct {
         // No move was found, if we are in check this is a checkmate
         // otherwhise is a stalemate
         if (movesfound == 0) {
-            if (board.isKingAttacked(color)) {
+            if (in_check) {
                 return best_score;
             } else {
                 return 0;
