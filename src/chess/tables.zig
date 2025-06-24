@@ -209,3 +209,21 @@ pub fn whitePawnAttacks(sq: usize) u64 {
 pub fn pawnAttacks(comptime color: bool, sq: usize) u64 {
     return pawn_attacks[@intFromBool(color)][sq];
 }
+
+pub fn pieceAttacks(
+    comptime color: bool,
+    comptime piece: usize,
+    sq: usize,
+    occupied: u64,
+) u64 {
+    std.debug.assert(piece < 6);
+    switch (piece) {
+        constants.pieces.PAWN => return pawnAttacks(color, sq),
+        constants.pieces.KNIGHT => return knightAttacks(sq),
+        constants.pieces.BISHOP => return bishopAttacks(sq, occupied),
+        constants.pieces.ROOK => return rookAttacks(sq, occupied),
+        constants.pieces.QUEEN => return queenAttacks(sq, occupied),
+        constants.pieces.KING => return kingAttacks(sq),
+        else => unreachable,
+    }
+}

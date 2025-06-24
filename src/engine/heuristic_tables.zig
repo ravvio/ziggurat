@@ -1,5 +1,6 @@
 const std = @import("std");
 const types = @import("types.zig");
+const chess = @import("../chess.zig");
 
 /// Material value in the middlegame
 const mg_material: [6]types.Score = .{ 0, 1025, 477, 365, 337, 82 };
@@ -173,3 +174,77 @@ pub const piece_value: [2][6][64]@Vector(2, types.Score) = compute: {
     }
     break :compute res;
 };
+
+/// Table from stockfish: https://www.chessprogramming.org/King_Safety
+pub const safety: [100]types.Score = .{
+    0,   0,   1,   2,   3,   5,   7,   9,   12,  15,
+    18,  22,  26,  30,  35,  39,  44,  50,  56,  62,
+    68,  75,  82,  85,  89,  97,  105, 113, 122, 131,
+    140, 150, 169, 180, 191, 202, 213, 225, 237, 248,
+    260, 272, 283, 295, 307, 319, 330, 342, 354, 366,
+    377, 389, 401, 412, 424, 436, 448, 459, 471, 483,
+    494, 500, 500, 500, 500, 500, 500, 500, 500, 500,
+    500, 500, 500, 500, 500, 500, 500, 500, 500, 500,
+    500, 500, 500, 500, 500, 500, 500, 500, 500, 500,
+    500, 500, 500, 500, 500, 500, 500, 500, 500, 500,
+};
+
+pub const vec_mul_2 = @Vector(2, u64){ 2, 2 };
+pub const vec_mul_3 = @Vector(2, u64){ 3, 3 };
+pub const vec_mul_4 = @Vector(2, u64){ 4, 4 };
+pub const vec_mul_5 = @Vector(2, u64){ 5, 5 };
+
+// [white, black]
+pub const king_zones: [2][64]u64 = blk: {
+    @setEvalBranchQuota(10_000);
+    break :blk initKingZones();
+};
+
+fn goNord(orgin: chess.Square, n: usize) u64 {
+    var sq = orgin;
+    var res = chess.bitboard.SQUARES[sq.x];
+    for (0..n) |_| {
+        if (sq.rank() == 0) {
+            break;
+        }
+        sq = chess.Square.nord(sq);
+        res |= chess.bitboard.SQUARES[sq.x];
+    }
+    return res;
+}
+
+fn goSouth(origin: chess.Square, n: usize) u64 {
+    var sq = origin;
+    var res = chess.bitboard.SQUARES[sq.x];
+    for (0..n) |_| {
+        if (sq.rank() == 7) {
+            break;
+        }
+        sq = chess.Square.sud(sq);
+        res |= chess.bitboard.SQUARES[sq.x];
+    }
+    return res;
+}
+
+pub fn initKingZones() [2][64]u64 {
+    var res = std.mem.zeroes([2][64]u64);
+
+    for (0..64) |sq| {
+        const origin = chess.Square.ALL_SQUARES[sq];
+        const zone = chess.tables.kingAttacks(sq);
+
+        var w_zone = zone | goNord(origin, 3);
+        var b_zone = zone | goSouth(origin, 3);
+        if (origin.file() != 0) {
+            w_zone |= goNord(chess.Square.west(origin), 3);
+            b_zone |= goSouth(chess.Square.west(origin), 3);
+        }
+        if (origin.file() != 7) {
+            w_zone |= goNord(chess.Square.east(origin), 3);
+            b_zone |= goSouth(chess.Square.east(origin), 3);
+        }
+        res[0][sq] = b_zone;
+        res[1][sq] = w_zone;
+    }
+    return res;
+}
