@@ -16,6 +16,29 @@ const max_extension: u8 = 4;
 
 const null_reduction: u8 = 3;
 
+var lmr: [64][64]u8 = std.mem.zeroes([64][64]u8);
+
+pub fn initLmr() void {
+    for (0..64) |depth| {
+        for (0..64) |move_number| {
+            if (depth < 3 or move_number < 2) {
+                lmr[depth][move_number] = 0;
+                continue;
+            }
+            const a = 0.3 * std.math.log(
+                f64,
+                std.math.e,
+                @as(f64, @floatFromInt(depth)),
+            ) * std.math.log(
+                f64,
+                std.math.e,
+                @as(f64, @floatFromInt(move_number)),
+            );
+            lmr[depth][move_number] = @intFromFloat(a);
+        }
+    }
+}
+
 /// The Engine is the component responsible for finding the best move
 pub const Engine = struct {
     /// Should the engine not emit uci info
@@ -356,18 +379,17 @@ pub const Engine = struct {
             }
 
             // Assert that the first move is the hashmove if we found one
-            // std.debug.assert(hashmove == 0 or movesfound > 0 or move.withoutSortScore() == hashmove);
+            std.debug.assert(hashmove == 0 or movesfound > 0 or move.withoutSortScore() == hashmove);
 
-            movesfound += 1;
-
-            // Increment ply, add to history, ecc..
+            // Increment ply, add to history, increase moves found
             self.ply += 1;
             self.hash_history.append(zobrist_key) catch unreachable;
+            movesfound += 1;
 
             // Evaluate the leaf
             var score: types.Score = undefined;
 
-            // PVS
+            // - PVS
             // When we are not in the principal variation, i.e we have already
             // found a move that raises the alpha, try to do a search with a
             // null window, this is because we believe that the move we have
@@ -387,18 +409,56 @@ pub const Engine = struct {
                     extension,
                 );
             } else {
-                score = -self.negamax(
-                    board,
-                    !color,
-                    NodeType.Other,
-                    is_null,
-                    depth - 1,
-                    -alpha - 1,
-                    -alpha,
-                    extension,
-                );
 
-                // Research PV nodes in case of a fail high
+                var do_full_depth = true;
+                if (depth > 2) {
+                    // - LMR
+                    // Late Move Reduction
+
+                    // Start with a term based on the product of the
+                    // logs of the depth and movesfound
+                    var reduction = lmr[depth][@min(movesfound, 63)];
+
+                    // Reduce by 1 if best move was a capture and this one
+                    // is not
+                    if (best_move.capture() != 0 and move.capture() == 0) {
+                        reduction += 1;
+                    }
+
+                    // Finalize reduction making sure we are not going under
+                    reduction = @min(reduction, depth - 1);
+                    const reduced_depth = depth - reduction;
+
+                    score = -self.negamax(
+                        board,
+                        !color,
+                        NodeType.Other,
+                        is_null,
+                        reduced_depth - 1,
+                        -alpha - 1,
+                        -alpha,
+                        extension,
+                    );
+
+                    do_full_depth = score > alpha and reduced_depth < depth;
+                }
+
+                // Do full search
+                // if we were in LMR we found good idea
+                if (do_full_depth) {
+                    score = -self.negamax(
+                        board,
+                        !color,
+                        NodeType.Other,
+                        is_null,
+                        depth - 1,
+                        -alpha - 1,
+                        -alpha,
+                        extension,
+                    );
+                }
+
+                // Research for PV nodes
                 if (node_type != NodeType.Other and score > alpha) {
                     score = -self.negamax(
                         board,

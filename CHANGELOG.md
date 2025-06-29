@@ -267,7 +267,6 @@ Eval8 kiwipete         1        849.29ms       849.29ms ± 0ns         (849.29ms
 v0.5.0 vs v0.4.0 - 100 games 40/60
 Elo difference: 17.4 +/- 57.9, LOS: 72.4 %, DrawRatio: 29.0 %
 ```
-
 ### v0.5.1
 - Fixed a bug in the conditions of the pvs re-search
 - Increase benchmark times,
@@ -290,4 +289,32 @@ Eval2 kiwipete         100000   3.194s         31.941us ± 19.352us    (26.892us
 Eval4 kiwipete         15118    4.976s         329.186us ± 45.801us   (289.815us ... 1.471ms)      334.591us  492.338us  513.014us
 Eval6 kiwipete         3362     4.661s         1.386ms ± 156.224us    (1.265ms ... 2.829ms)        1.39ms     2.052ms    2.128ms
 Eval8 kiwipete         18       990.449ms      55.024ms ± 7.039ms     (50.561ms ... 76.12ms)       56.813ms   76.12ms    76.12ms
+```
+
+### v0.6.0 - LMR
+- Implement late move reduction based on product of logarithms of depth
+  and number of move
+- Reduce depth by 1 if the main move is a capture and this one is not
+
+```
+benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995
+-----------------------------------------------------------------------------------------------------------------------------
+Perft2 startpos        100000   1.381s         13.817us ± 1.803us     (12.49us ... 137.204us)      13.952us   17.136us   19.344us
+Perft4 startpos        921      5.019s         5.45ms ± 557.966us     (5.104ms ... 20.1ms)         5.403ms    6.468ms    6.954ms
+Perft6 startpos        1        3.3s           3.3s ± 0ns             (3.3s ... 3.3s)              3.3s       3.3s       3.3s
+Perft2 kiwipete        86877    5.002s         57.584us ± 8.402us     (52.357us ... 973.097us)     57.603us   69.626us   72.424us
+Perft4 kiwipete        46       4.983s         108.341ms ± 2.123ms    (106.972ms ... 115.191ms)    108.099ms  115.191ms  115.191ms
+Eval2 startpos         100000   2.843s         28.432us ± 17.429us    (25.235us ... 991.986us)     27.474us   35.804us   43.857us
+Eval4 startpos         26825    5.002s         186.481us ± 21.601us   (173us ... 1.263ms)          185.644us  242.231us  247.778us
+Eval6 startpos         8419     5.004s         594.371us ± 43.808us   (552.178us ... 1.629ms)      595.061us  727.718us  774.507us
+Eval8 startpos         608      4.912s         8.079ms ± 425.703us    (7.719ms ... 11.126ms)       7.973ms    9.851ms    9.896ms
+Eval2 kiwipete         100000   2.764s         27.644us ± 18.514us    (24.333us ... 1.255ms)       26.557us   34.925us   43.551us
+Eval4 kiwipete         14649    4.995s         341.004us ± 28.431us   (311.256us ... 1.347ms)      342.047us  412.801us  426.881us
+Eval6 kiwipete         10199    4.941s         484.531us ± 36.277us   (444.733us ... 1.562ms)      486.607us  581.849us  603.759us
+Eval8 kiwipete         672      4.52s          6.726ms ± 312.808us    (6.428ms ... 9.985ms)        6.672ms    8.103ms    8.165ms
+```
+
+```
+v0.6.0 vs v0.5.1 - 100 games 10/10
+Elo difference: 49.0 +/- 58.6, LOS: 95.1 %, DrawRatio: 28.0 %
 ```
