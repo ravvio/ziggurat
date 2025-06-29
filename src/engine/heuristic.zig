@@ -31,14 +31,14 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
         while (it.next()) |sq| {
             res -= tables.piece_value[0][piece][sq];
             gamephase += gamephase_increments[piece];
-            black_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, board.colors[0]);
+            black_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, board.occupied);
         }
         // White
         it = chess.bitboard.BitboardIterator.new(board.boards[1][piece]);
         while (it.next()) |sq| {
             res += tables.piece_value[1][piece][sq];
             gamephase += gamephase_increments[piece];
-            white_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, board.colors[1]);
+            white_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, board.occupied);
         }
     }
 
@@ -48,11 +48,11 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
     const mg, const eg = res;
     var final = @divTrunc((middlegame_phase * mg) + (endgame_phase * eg), 24);
 
-    final += compute_king_safety(board, &white_targets, &black_targets);
+    final += computeKingSafety(board, &white_targets, &black_targets);
     return sign * final;
 }
 
-pub fn compute_king_safety(
+pub fn computeKingSafety(
     board: *const chess.Board,
     white_targets: *const [6]u64,
     black_targets: *const [6]u64,
