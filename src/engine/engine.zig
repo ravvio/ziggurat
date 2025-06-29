@@ -397,20 +397,20 @@ pub const Engine = struct {
                     -alpha,
                     extension,
                 );
-            }
-            // Research for non-PV nodes if the the score has surpassed bound
-            // i.e we have a new PV
-            if (node_type != NodeType.Other and score > alpha) {
-                score = -self.negamax(
-                    board,
-                    !color,
-                    NodeType.PV,
-                    is_null,
-                    depth - 1,
-                    -beta,
-                    -alpha,
-                    extension,
-                );
+
+                // Research PV nodes in case of a fail high
+                if (node_type != NodeType.Other and score > alpha) {
+                    score = -self.negamax(
+                        board,
+                        !color,
+                        NodeType.PV,
+                        is_null,
+                        depth - 1,
+                        -beta,
+                        -alpha,
+                        extension,
+                    );
+                }
             }
 
             // Undo stuff

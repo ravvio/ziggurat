@@ -11,7 +11,9 @@ pub fn main() !void {
     chess.tables.initAll();
 
     const stdout = std.io.getStdOut().writer();
-    var bench = zbench.Benchmark.init(std.heap.page_allocator, .{});
+    var bench = zbench.Benchmark.init(std.heap.page_allocator, .{
+        .time_budget_ns = 5e9,
+    });
     defer bench.deinit();
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
