@@ -16,13 +16,17 @@ const max_extension: u8 = 4;
 
 const null_reduction: u8 = 3;
 
-var lmr: [64][64]u8 = std.mem.zeroes([64][64]u8);
+const lmr: [64][64]u8 = blk: {
+    @setEvalBranchQuota(100_000);
+    break :blk initLmr();
+};
 
-pub fn initLmr() void {
+pub fn initLmr() [64][64]u8 {
+    var res = std.mem.zeroes([64][64]u8);
     for (0..64) |depth| {
         for (0..64) |move_number| {
             if (depth < 3 or move_number < 2) {
-                lmr[depth][move_number] = 0;
+                res[depth][move_number] = 0;
                 continue;
             }
             const a = 0.3 * std.math.log(
@@ -34,9 +38,10 @@ pub fn initLmr() void {
                 std.math.e,
                 @as(f64, @floatFromInt(move_number)),
             );
-            lmr[depth][move_number] = @intFromFloat(a);
+            res[depth][move_number] = @intFromFloat(a);
         }
     }
+    return res;
 }
 
 /// The Engine is the component responsible for finding the best move

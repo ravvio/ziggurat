@@ -3,6 +3,8 @@ const chess = @import("../chess.zig");
 const types = @import("types.zig");
 const tables = @import("heuristic_tables.zig");
 
+const pieces = chess.constants.pieces;
+
 pub const mate_score: types.Score = 100_000;
 pub const max_score: types.Score = 99_000;
 pub const max_mate: u32 = 256;
@@ -20,7 +22,11 @@ const gamephase_increments: [6]types.Score = .{ 0, 4, 2, 1, 1, 0 };
 pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
     const sign = if (color) 1 else -1;
     var gamephase: types.Score = 0;
+
     var res: @Vector(2, types.Score) = .{ 0, 0 };
+
+    var passed_pawns_b: usize = 0;
+    var passed_pawns_w: usize = 0;
 
     var white_targets = std.mem.zeroes([6]u64);
     var black_targets = std.mem.zeroes([6]u64);
@@ -32,6 +38,16 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
             res -= tables.piece_value[0][piece][sq];
             gamephase += gamephase_increments[piece];
             black_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, board.occupied);
+
+            // Pawn structure
+            if (piece == pieces.PAWN) {
+                // Is passed pawn
+                const passed = (tables.passed_pawn_zones[0][sq] & board.boards[1][pieces.PAWN]) == 0;
+                if (passed) {
+                    passed_pawns_b += 1;
+                }
+            }
+
         }
         // White
         it = chess.bitboard.BitboardIterator.new(board.boards[1][piece]);
@@ -39,17 +55,32 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
             res += tables.piece_value[1][piece][sq];
             gamephase += gamephase_increments[piece];
             white_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, board.occupied);
+
+            // Pawn structure
+            if (piece == pieces.PAWN) {
+                // Is passed pawn
+                const passed = (tables.passed_pawn_zones[1][sq] & board.boards[0][pieces.PAWN]) == 0;
+                if (passed) {
+                    passed_pawns_w += 1;
+                }
+            }
         }
     }
 
     const middlegame_phase = if (gamephase > 24) 24 else gamephase;
     const endgame_phase = 24 - middlegame_phase;
-
     const mg, const eg = res;
-    var final = @divTrunc((middlegame_phase * mg) + (endgame_phase * eg), 24);
 
-    final += computeKingSafety(board, &white_targets, &black_targets);
-    return sign * final;
+    // Pawn structure
+    // More important in the end game
+    const pawn_structure =
+        (1 + eg) * (tables.passed_pawns_values[passed_pawns_w] - tables.passed_pawns_values[passed_pawns_b]);
+
+    const psq_and_ps = @divTrunc( (middlegame_phase * mg) + (endgame_phase * eg) + pawn_structure, 24);
+
+    const king_safety = computeKingSafety(board, &white_targets, &black_targets);
+
+    return sign * (psq_and_ps + king_safety);
 }
 
 pub fn computeKingSafety(

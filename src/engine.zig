@@ -5,8 +5,6 @@ const engine = @import("./engine/engine.zig");
 pub const Engine = engine.Engine;
 pub const initLmr = engine.initLmr;
 
-pub const ziggurat = @import("root.zig");
-
 const std = @import("std");
 const chess = @import("chess.zig");
 
@@ -40,7 +38,7 @@ test "mates in 1" {
     defer arena.deinit();
     const allocator = arena.allocator();
     try transposition.initGlobalTranspositionTable(allocator, 64);
-    ziggurat.initAll();
+    chess.tables.initAll();
     defer transposition.global_tt.deinit();
     try testMate("1rb5/4r3/3p1npb/3kp1P1/1P3P1P/5nR1/2Q1BK2/bN4NR w - - 3 61", "c2c4", 1);
     try testMate("rn1q2n1/b3k1pr/pp1pB1Qp/2p1p1P1/2P1PP2/5R1P/P2P4/RNB1K3 w - - 1 24", "g6f7", 1);
@@ -54,7 +52,7 @@ test "mates in 2" {
     const allocator = arena.allocator();
     try transposition.initGlobalTranspositionTable(allocator, 64);
     defer transposition.global_tt.deinit();
-    ziggurat.initAll();
+    chess.tables.initAll();
     try testMate("r2qk2r/pb4pp/1n2Pb2/2B2Q2/p1p5/2P5/2B2PPP/RN2R1K1 w - - 1 0", "f5g6", 2);
 }
 
@@ -64,7 +62,7 @@ test "mates in 3" {
     const allocator = arena.allocator();
     try transposition.initGlobalTranspositionTable(allocator, 64);
     defer transposition.global_tt.deinit();
-    ziggurat.initAll();
+    chess.tables.initAll();
     try testMate("8/8/8/8/1p1N4/1Bk1K3/3N4/b7 w - - 1 0", "d4e6", 3);
     try testMate("5K1k/6R1/8/3b2P1/5p2/p6p/q7/8 w - - 1 0", "g5g6", 3);
     try testMate("1Q6/3r4/q1k1bP1p/1pBp1p2/3P4/8/1P4PP/5RK1 w - - 1 0", "f1c1", 3);

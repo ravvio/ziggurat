@@ -3,13 +3,12 @@ const std = @import("std");
 const chess = @import("chess.zig");
 const testing = std.testing;
 const engine = @import("engine.zig");
-const ziggurat = @import("root.zig");
 
 const perft = @import("./benches/perft.zig");
 const eval = @import("./benches/eval.zig");
 
 pub fn main() !void {
-    ziggurat.initAll();
+    chess.tables.initAll();
 
     const stdout = std.io.getStdOut().writer();
     var bench = zbench.Benchmark.init(std.heap.page_allocator, .{

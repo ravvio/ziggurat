@@ -1,6 +1,7 @@
 const std = @import("std");
 const chess = @import("../chess.zig");
 const Engine = @import("./engine.zig").Engine;
+const parameters = @import("../engine/parameters.zig");
 const perft = @import("../perft.zig");
 
 /// Implementation of the Universal Chess Interface
@@ -87,16 +88,45 @@ pub const Uci = struct {
             // Ask for idetification
             else if (std.mem.eql(u8, cmd.?, "uci")) {
                 _ = try stdout.writeAll(
-                    \\id name ziggurat_0.6.0
+                    \\id name ziggurat_0.7.0
                     \\id author Alessio Raviola <alessio.raviola.98@gmail.com>
                     \\
                 );
-                // TODO add options
+
+                for (parameters.tunable_params) |param| {
+                    _ = try stdout.print(
+                        "option name {s} type spin default {d} min {d} max {d}\n",
+                        .{ param.name, param.def, param.min, param.max }
+                    );
+                }
+
                 _ = try stdout.writeAll("uciok\n");
             }
             // Set an engine option
             else if (std.mem.eql(u8, cmd.?, "setoption")) {
-                // TODO set options
+                if (tokens.next()) |token| {
+                    if (!std.mem.eql(u8, token, "name")) {
+                        return;
+                    }
+                    const param_name = tokens.next() orelse return;
+                    if (!std.mem.eql(u8, tokens.next() orelse "", "value")) {
+                        return;
+                    }
+                    const param_value = tokens.next() orelse return;
+                    const value = try std.fmt.parseInt(
+                        i32, param_value, 10
+                    );
+
+                    if (std.mem.eql(u8, param_name, "PassedPawnValue")) {
+                        parameters.passed_pawn_value = value;
+                        parameters.updatePassedPawnValue();
+                    }
+                    if (std.mem.eql(u8, param_name, "PassedPawnValueIncrement")) {
+                        parameters.passed_pawn_value_increment = value;
+                        parameters.updatePassedPawnValue();
+                    }
+
+                }
             }
             // Start a new game
             else if (std.mem.eql(u8, cmd.?, "ucinewgame")) {

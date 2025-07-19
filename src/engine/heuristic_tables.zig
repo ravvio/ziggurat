@@ -248,3 +248,34 @@ pub fn initKingZones() [2][64]u64 {
     }
     return res;
 }
+
+pub const passed_pawn_zones: [2][64]u64 = blk: {
+    @setEvalBranchQuota(10_000);
+    break :blk initPassedPawnZones();
+};
+
+pub var passed_pawns_values: [8]types.Score = .{
+    20, 22, 24, 26, 28, 30, 30, 30
+};
+
+pub fn initPassedPawnZones() [2][64]u64 {
+    var res = std.mem.zeroes([2][64]u64);
+
+    for (0..64) |sq| {
+        const origin = chess.Square.ALL_SQUARES[sq];
+
+        var w_zone = goNord(origin, 8);
+        var b_zone = goSouth(origin, 8);
+        if (origin.file() != 0) {
+            w_zone |= goNord(chess.Square.west(origin), 8);
+            b_zone |= goSouth(chess.Square.west(origin), 3);
+        }
+        if (origin.file() != 7) {
+            w_zone |= goNord(chess.Square.east(origin), 8);
+            b_zone |= goSouth(chess.Square.east(origin), 8);
+        }
+        res[0][sq] = b_zone;
+        res[1][sq] = w_zone;
+    }
+    return res;
+}

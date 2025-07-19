@@ -1,7 +1,6 @@
 const std = @import("std");
 const chess = @import("chess.zig");
 const engine = @import("engine.zig");
-const ziggurat = @import("root.zig");
 
 const perft = @import("perft.zig");
 
@@ -114,7 +113,7 @@ pub fn main() !void {
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    ziggurat.initAll();
+    chess.tables.initAll();
     try engine.transposition.initGlobalTranspositionTable(allocator, 64);
     defer engine.transposition.global_tt.deinit();
 

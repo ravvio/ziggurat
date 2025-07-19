@@ -343,3 +343,24 @@ Eval8 kiwipete         285      2.217s         7.781ms ± 633.464us    (6.583ms 
 v0.6.1 vs v0.5.0 - 100 games 10/10
 Elo difference: 13.9 +/- 52.2, LOS: 70.0 %, DrawRatio: 42.0 %
 ```
+
+### v0.7.0 - Pawn Structure
+- Add passed pawn evalutation
+
+```
+benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995
+-----------------------------------------------------------------------------------------------------------------------------
+Perft2 startpos        100000   1.484s         14.84us ± 6.212us      (12.887us ... 964.962us)     15.021us   23.106us   28.14us
+Perft4 startpos        874      5.034s         5.76ms ± 404.99us      (5.262ms ... 10.083ms)       5.837ms    6.999ms    7.318ms
+Perft6 startpos        1        3.66s          3.66s ± 0ns            (3.66s ... 3.66s)            3.66s      3.66s      3.66s
+Perft2 kiwipete        77237    5.311s         68.775us ± 20.382us    (53.383us ... 1.066ms)       73.479us   112.47us   198.463us
+Perft4 kiwipete        37       4.684s         126.617ms ± 5.328ms    (118.968ms ... 137.301ms)    129.91ms   137.301ms  137.301ms
+Eval2 startpos         100000   3.616s         36.168us ± 34.715us    (26.873us ... 1.623ms)       35.496us   79.581us   215.704us
+Eval4 startpos         21076    4.894s         232.211us ± 47.727us   (196.03us ... 1.255ms)       240.552us  422.141us  529.227us
+Eval6 startpos         7024     4.903s         698.129us ± 103.723us  (600.183us ... 2.196ms)      728.189us  1.138ms    1.284ms
+Eval8 startpos         437      5.117s         11.71ms ± 1.44ms       (8.605ms ... 19.451ms)       12.452ms   15.568ms   16.021ms
+Eval2 kiwipete         100000   3.387s         33.875us ± 31.47us     (25.849us ... 1.284ms)       33.333us   63.463us   168.725us
+Eval4 kiwipete         11054    4.917s         444.838us ± 79.135us   (376.425us ... 1.64ms)       459.015us  808.21us   926.644us
+Eval6 kiwipete         4423     4.874s         1.102ms ± 171.831us    (939.183us ... 2.486ms)      1.137ms    1.87ms     2.044ms
+Eval8 kiwipete         710      4.424s         6.231ms ± 485.959us    (5.685ms ... 8.588ms)        6.399ms    7.914ms    8.316ms
+```
