@@ -3,6 +3,7 @@ const ArrayList = std.ArrayList;
 const Square = @import("square.zig").Square;
 const pieces = @import("constants.zig").pieces;
 const ChessMove = @import("chessmove.zig").ChessMove;
+const constants = @import("constants.zig");
 
 fn initCastling() [64]CastlingRights {
     var all = [_]CastlingRights{CastlingRights.ALL} ** 64;
@@ -43,17 +44,16 @@ pub const CastlingRights = struct {
 };
 
 pub const GameState = struct {
-    /// Current player, true => white, false => black
-    current_side: bool = true,
+    next_move: ChessMove = ChessMove{ .x = 0 },
+    zobrist_key: u64 = 0,
+
+    current_side: constants.Color = constants.Colors.black,
 
     move_number: usize = 1,
     halfmove_clock: usize = 0,
 
     en_passant: ?Square = null,
     castling: CastlingRights = CastlingRights.ZERO,
-
-    next_move: ChessMove = ChessMove{ .x = 0 },
-    zobrist_key: u64 = 0,
 
     pub fn format(
         s: GameState,

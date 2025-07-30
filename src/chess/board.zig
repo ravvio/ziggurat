@@ -535,17 +535,14 @@ pub const Board = struct {
     }
 
     pub fn generatePseudolegalMoves(
-        b: *const Board,
+        board: *const Board,
         comptime movetype: MoveType,
         comptime color: bool,
         movelist: *Movelist,
     ) void {
-        // const us = @intFromBool(color);
-        // const op = @intFromBool(!color);
-
-        const friend = b.friends(color);
-        const enemy = b.friends(!color);
-        const occupied = b.occupied;
+        const friend = board.friends(color);
+        const enemy = board.friends(!color);
+        const occupied = board.occupied;
 
         const mask = switch (movetype) {
             .All => ~friend,
@@ -553,61 +550,67 @@ pub const Board = struct {
             .Capture => enemy,
             .CheckDefence => blk: {
                 // TODO this is not perfect but for now ok
-                const ksq = b.kingSquare(color).x;
+                const ksq = board.kingSquare(color).x;
                 const attacks = tables.queenAttacks(ksq, occupied) | tables.knightAttacks(ksq) | tables.pawnAttacks(color, ksq);
                 break :blk attacks & ~friend;
             },
         };
 
+        var squares: [22]usize = std.mem.zeroes([22]usize);
+
         // Generate Queen moves
-        var biter = bb.BitboardIterator.new(b.queens(color));
-        while (biter.next()) |sq| {
+        bb.toSquares(board.queens(color), &squares);
+        var i: usize = 0;
+        while (squares[i] != 0) : (i += 1) {
             addToMovelist(
                 color,
                 pieces.QUEEN,
                 movelist,
-                b,
-                sq,
-                tables.queenAttacks(sq, occupied) & mask,
+                board,
+                squares[i],
+                tables.queenAttacks(squares[i], occupied) & mask,
             );
         }
 
         // Genereate Rook moves
-        biter = bb.BitboardIterator.new(b.rooks(color));
-        while (biter.next()) |sq| {
+        bb.toSquares(board.rooks(color), &squares);
+        i = 0;
+        while (squares[i] != 0) : (i +=1) {
             addToMovelist(
                 color,
                 pieces.ROOK,
                 movelist,
-                b,
-                sq,
-                tables.rookAttacks(sq, occupied) & mask,
+                board,
+                squares[i],
+                tables.rookAttacks(squares[i], occupied) & mask,
             );
         }
 
         // Genereate Bishop moves
-        biter = bb.BitboardIterator.new(b.bishops(color));
-        while (biter.next()) |sq| {
+        bb.toSquares(board.bishops(color), &squares);
+        i = 0;
+        while (squares[i] != 0) : (i += 1) {
             addToMovelist(
                 color,
                 pieces.BISHOP,
                 movelist,
-                b,
-                sq,
-                tables.bishopAttacks(sq, occupied) & mask,
+                board,
+                squares[i],
+                tables.bishopAttacks(squares[i], occupied) & mask,
             );
         }
 
         // Generate Knight moves
-        biter = bb.BitboardIterator.new(b.knights(color));
-        while (biter.next()) |sq| {
+        bb.toSquares(board.knights(color), &squares);
+        i = 0;
+        while (squares[i] != 0) : (i += 1) {
             addToMovelist(
                 color,
                 pieces.KNIGHT,
                 movelist,
-                b,
-                sq,
-                tables.knightAttacks(sq) & mask,
+                board,
+                squares[i],
+                tables.knightAttacks(squares[i]) & mask,
             );
         }
 
@@ -615,10 +618,12 @@ pub const Board = struct {
         const fourth_rank = if (color) bb.RANK_4 else bb.RANK_5;
         const direction: i8 = if (color) -8 else 8;
         const rot_count = @as(u8, @bitCast(64 + direction));
-        biter = bb.BitboardIterator.new(b.pawns(color));
-        while (biter.next()) |sq| {
+
+        bb.toSquares(board.pawns(color), &squares);
+        i = 0;
+        while (squares[i] != 0) : (i += 1) {
             // TODO rivedere
-            const to: usize = @truncate(@as(u128, @bitCast(@as(i128, sq) + direction)));
+            const to: usize = @truncate(@as(u128, @bitCast(@as(i128, squares[i]) + direction)));
             var targets: u64 = 0;
 
             // Pushes
@@ -629,56 +634,56 @@ pub const Board = struct {
             }
             // Captures
             if (movetype == MoveType.All or movetype == MoveType.Capture) {
-                const attacks = tables.pawnAttacks(color, sq);
-                if (b.state.en_passant) |en| {
+                const attacks = tables.pawnAttacks(color, squares[i]);
+                if (board.state.en_passant) |en| {
                     targets |= (attacks & (enemy | bb.SQUARES[en.x]));
                 } else {
                     targets |= (attacks & enemy);
                 }
             }
 
-            addToMovelist(color, pieces.PAWN, movelist, b, sq, targets);
+            addToMovelist(color, pieces.PAWN, movelist, board, squares[i], targets);
         }
 
         // Generate King moves
-        const ksq = b.kingSquare(color).x;
+        const ksq = board.kingSquare(color).x;
         var targets = tables.kingAttacks(ksq) & mask;
-        if (movetype != MoveType.Capture and !b.squareAttacked(color, ksq)) {
+        if (movetype != MoveType.Capture and !board.squareAttacked(color, ksq)) {
             if (color) {
-                if (b.state.castling.x & CastlingRights.WK.x > CastlingRights.ZERO.x //
+                if (board.state.castling.x & CastlingRights.WK.x > CastlingRights.ZERO.x //
                 and (bb.SQUARES[Square.F1.x] | bb.SQUARES[Square.G1.x]) & occupied == 0 //
-                and !b.squareAttacked(color, Square.F1.x) //
-                and !b.squareAttacked(color, Square.G1.x) //
+                and !board.squareAttacked(color, Square.F1.x) //
+                and !board.squareAttacked(color, Square.G1.x) //
                 ) {
                     // todo: This is a single move, we can cache it
                     targets |= bb.SQUARES[Square.G1.x];
                 }
-                if (b.state.castling.x & CastlingRights.WQ.x > CastlingRights.ZERO.x //
+                if (board.state.castling.x & CastlingRights.WQ.x > CastlingRights.ZERO.x //
                 and (bb.SQUARES[Square.B1.x] | bb.SQUARES[Square.C1.x] | bb.SQUARES[Square.D1.x]) & occupied == 0 //
-                and !b.squareAttacked(color, Square.C1.x) //
-                and !b.squareAttacked(color, Square.D1.x) //
+                and !board.squareAttacked(color, Square.C1.x) //
+                and !board.squareAttacked(color, Square.D1.x) //
                 ) {
                     targets |= bb.SQUARES[Square.C1.x];
                 }
             } else {
-                if (b.state.castling.x & CastlingRights.BK.x > CastlingRights.ZERO.x //
+                if (board.state.castling.x & CastlingRights.BK.x > CastlingRights.ZERO.x //
                 and (bb.SQUARES[Square.F8.x] | bb.SQUARES[Square.G8.x]) & occupied == 0 //
-                and !b.squareAttacked(color, Square.F8.x) //
-                and !b.squareAttacked(color, Square.G8.x) //
+                and !board.squareAttacked(color, Square.F8.x) //
+                and !board.squareAttacked(color, Square.G8.x) //
                 ) {
                     // todo: This is a single move, we can cache it
                     targets |= bb.SQUARES[Square.G8.x];
                 }
-                if (b.state.castling.x & CastlingRights.BQ.x > CastlingRights.ZERO.x //
+                if (board.state.castling.x & CastlingRights.BQ.x > CastlingRights.ZERO.x //
                 and (bb.SQUARES[Square.B8.x] | bb.SQUARES[Square.C8.x] | bb.SQUARES[Square.D8.x]) & occupied == 0 //
-                and !b.squareAttacked(color, Square.C8.x) //
-                and !b.squareAttacked(color, Square.D8.x) //
+                and !board.squareAttacked(color, Square.C8.x) //
+                and !board.squareAttacked(color, Square.D8.x) //
                 ) {
                     targets |= bb.SQUARES[Square.C8.x];
                 }
             }
         }
-        addToMovelist(color, pieces.KING, movelist, b, ksq, targets);
+        addToMovelist(color, pieces.KING, movelist, board, ksq, targets);
     }
 
     pub fn squareAttacked(b: *const Board, comptime color: bool, sq: usize) bool {

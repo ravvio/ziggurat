@@ -86,6 +86,12 @@ pub const pieces = struct {
     }
 };
 
+pub const Color = bool;
+pub const Colors = struct {
+    pub const white: Color = true;
+    pub const black: Color = false;
+};
+
 pub const MAX_LEGAL_MOVES: usize = 218;
 pub const MAX_PSEUDO_MOVES: usize = 512;
 pub const MAX_GAME_MOVES: usize = 2048;

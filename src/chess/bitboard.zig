@@ -1,6 +1,8 @@
 const std = @import("std");
 
-pub fn debugPrint(b: u64) void {
+pub const Bitboard = u64;
+
+pub fn debugPrint(b: Bitboard) void {
     std.debug.print("\n", .{});
     for (0..64) |i| {
         const a: u64 = @as(u64, 1) << @truncate(i);
@@ -16,9 +18,9 @@ pub fn debugPrint(b: u64) void {
 }
 
 pub const BitboardIterator = struct {
-    u: u64,
+    u: Bitboard,
 
-    pub fn new(u: u64) BitboardIterator {
+    pub fn new(u: Bitboard) BitboardIterator {
         return .{ .u = u };
     }
 
@@ -31,6 +33,21 @@ pub const BitboardIterator = struct {
         return res;
     }
 };
+
+pub fn toSquares(
+    _bitboard: Bitboard,
+    res: *[22]usize,
+) void {
+    var bitboard = _bitboard;
+    var i: usize = 0;
+
+    while (bitboard != 0) {
+        res[i] = @ctz(bitboard);
+        bitboard &= (bitboard - 1);
+        i += 1;
+    }
+    res[i] = 0;
+}
 
 pub const EMPTY = 0;
 
