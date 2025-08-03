@@ -47,7 +47,7 @@ pub const GameState = struct {
     next_move: ChessMove = ChessMove{ .x = 0 },
     zobrist_key: u64 = 0,
 
-    current_side: constants.Color = constants.Colors.black,
+    current_side: constants.Color = constants.Colors.white,
 
     move_number: usize = 1,
     halfmove_clock: usize = 0,

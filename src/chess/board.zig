@@ -561,7 +561,7 @@ pub const Board = struct {
         // Generate Queen moves
         bb.toSquares(board.queens(color), &squares);
         var i: usize = 0;
-        while (squares[i] != 0) : (i += 1) {
+        while (squares[i] != 64) : (i += 1) {
             addToMovelist(
                 color,
                 pieces.QUEEN,
@@ -575,7 +575,7 @@ pub const Board = struct {
         // Genereate Rook moves
         bb.toSquares(board.rooks(color), &squares);
         i = 0;
-        while (squares[i] != 0) : (i +=1) {
+        while (squares[i] != 64) : (i +=1) {
             addToMovelist(
                 color,
                 pieces.ROOK,
@@ -589,7 +589,7 @@ pub const Board = struct {
         // Genereate Bishop moves
         bb.toSquares(board.bishops(color), &squares);
         i = 0;
-        while (squares[i] != 0) : (i += 1) {
+        while (squares[i] != 64) : (i += 1) {
             addToMovelist(
                 color,
                 pieces.BISHOP,
@@ -603,7 +603,7 @@ pub const Board = struct {
         // Generate Knight moves
         bb.toSquares(board.knights(color), &squares);
         i = 0;
-        while (squares[i] != 0) : (i += 1) {
+        while (squares[i] != 64) : (i += 1) {
             addToMovelist(
                 color,
                 pieces.KNIGHT,
@@ -621,7 +621,7 @@ pub const Board = struct {
 
         bb.toSquares(board.pawns(color), &squares);
         i = 0;
-        while (squares[i] != 0) : (i += 1) {
+        while (squares[i] != 64) : (i += 1) {
             // TODO rivedere
             const to: usize = @truncate(@as(u128, @bitCast(@as(i128, squares[i]) + direction)));
             var targets: u64 = 0;

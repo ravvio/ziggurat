@@ -40,13 +40,12 @@ pub fn toSquares(
 ) void {
     var bitboard = _bitboard;
     var i: usize = 0;
-
     while (bitboard != 0) {
         res[i] = @ctz(bitboard);
         bitboard &= (bitboard - 1);
         i += 1;
     }
-    res[i] = 0;
+    res[i] = 64;
 }
 
 pub const EMPTY = 0;

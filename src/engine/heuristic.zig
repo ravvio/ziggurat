@@ -1,5 +1,7 @@
 const std = @import("std");
 const chess = @import("../chess.zig");
+const constants = chess.constants;
+const Colors = constants.Colors;
 const types = @import("types.zig");
 const tables = @import("heuristic_tables.zig");
 
@@ -25,20 +27,25 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
     var white_targets = std.mem.zeroes([6]u64);
     var black_targets = std.mem.zeroes([6]u64);
 
+    var squares: [22]usize = std.mem.zeroes([22]usize);
+    var i: usize = 0;
+
     inline for (0..6) |piece| {
         // Black
-        var it = chess.bitboard.BitboardIterator.new(board.boards[0][piece]);
-        while (it.next()) |sq| {
-            res -= tables.piece_value[0][piece][sq];
+        chess.bitboard.toSquares(board.boards[Colors.ublack][piece], &squares);
+        i = 0;
+        while (squares[i] != 64) : (i += 1) {
+            res -= tables.piece_value[Colors.ublack][piece][squares[i]];
             gamephase += gamephase_increments[piece];
-            black_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, board.occupied);
+            black_targets[piece] |= chess.tables.pieceAttacks(color, piece, squares[i], board.occupied);
         }
         // White
-        it = chess.bitboard.BitboardIterator.new(board.boards[1][piece]);
-        while (it.next()) |sq| {
-            res += tables.piece_value[1][piece][sq];
+        chess.bitboard.toSquares(board.boards[Colors.uwhite][piece], &squares);
+        i = 0;
+        while (squares[i] != 64) : (i += 1) {
+            res += tables.piece_value[Colors.uwhite][piece][squares[i]];
             gamephase += gamephase_increments[piece];
-            white_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, board.occupied);
+            white_targets[piece] |= chess.tables.pieceAttacks(color, piece, squares[i], board.occupied);
         }
     }
 

@@ -90,6 +90,9 @@ pub const Color = bool;
 pub const Colors = struct {
     pub const white: Color = true;
     pub const black: Color = false;
+
+    pub const uwhite: usize = @intFromBool(white);
+    pub const ublack: usize = @intFromBool(black);
 };
 
 pub const MAX_LEGAL_MOVES: usize = 218;
