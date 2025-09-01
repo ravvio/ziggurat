@@ -530,6 +530,10 @@ pub const Board = struct {
         return b.boards[@intFromBool(color)][5];
     }
 
+    pub fn bitboard(b: *const Board, comptime color: bool, comptime piece: usize) u64 {
+        return b.boards[@intFromBool(color)][piece];
+    }
+
     pub fn friends(b: *const Board, comptime color: bool) u64 {
         return b.colors[@intFromBool(color)];
     }
@@ -556,61 +560,59 @@ pub const Board = struct {
             },
         };
 
-        var squares: [22]usize = std.mem.zeroes([22]usize);
-
         // Generate Queen moves
-        bb.toSquares(board.queens(color), &squares);
-        var i: usize = 0;
-        while (squares[i] != 64) : (i += 1) {
+        var pieces_bb: usize = board.queens(color);
+        while (pieces_bb != 0) {
+            const sq: usize = bb.pop(&pieces_bb);
             addToMovelist(
                 color,
                 pieces.QUEEN,
                 movelist,
                 board,
-                squares[i],
-                tables.queenAttacks(squares[i], occupied) & mask,
+                sq,
+                tables.queenAttacks(sq, occupied) & mask,
             );
         }
 
         // Genereate Rook moves
-        bb.toSquares(board.rooks(color), &squares);
-        i = 0;
-        while (squares[i] != 64) : (i +=1) {
+        pieces_bb = board.rooks(color);
+        while (pieces_bb != 0) {
+            const sq: usize = bb.pop(&pieces_bb);
             addToMovelist(
                 color,
                 pieces.ROOK,
                 movelist,
                 board,
-                squares[i],
-                tables.rookAttacks(squares[i], occupied) & mask,
+                sq,
+                tables.rookAttacks(sq, occupied) & mask,
             );
         }
 
         // Genereate Bishop moves
-        bb.toSquares(board.bishops(color), &squares);
-        i = 0;
-        while (squares[i] != 64) : (i += 1) {
+        pieces_bb = board.bishops(color);
+        while (pieces_bb != 0) {
+            const sq: usize = bb.pop(&pieces_bb);
             addToMovelist(
                 color,
                 pieces.BISHOP,
                 movelist,
                 board,
-                squares[i],
-                tables.bishopAttacks(squares[i], occupied) & mask,
+                sq,
+                tables.bishopAttacks(sq, occupied) & mask,
             );
         }
 
         // Generate Knight moves
-        bb.toSquares(board.knights(color), &squares);
-        i = 0;
-        while (squares[i] != 64) : (i += 1) {
+        pieces_bb = board.knights(color);
+        while (pieces_bb != 0) {
+            const sq: usize = bb.pop(&pieces_bb);
             addToMovelist(
                 color,
                 pieces.KNIGHT,
                 movelist,
                 board,
-                squares[i],
-                tables.knightAttacks(squares[i]) & mask,
+                sq,
+                tables.knightAttacks(sq) & mask,
             );
         }
 
@@ -619,11 +621,11 @@ pub const Board = struct {
         const direction: i8 = if (color) -8 else 8;
         const rot_count = @as(u8, @bitCast(64 + direction));
 
-        bb.toSquares(board.pawns(color), &squares);
-        i = 0;
-        while (squares[i] != 64) : (i += 1) {
+        pieces_bb = board.pawns(color);
+        while (pieces_bb != 0) {
+            const sq = bb.pop(&pieces_bb);
             // TODO rivedere
-            const to: usize = @truncate(@as(u128, @bitCast(@as(i128, squares[i]) + direction)));
+            const to: usize = @truncate(@as(u128, @bitCast(@as(i128, sq) + direction)));
             var targets: u64 = 0;
 
             // Pushes
@@ -634,7 +636,7 @@ pub const Board = struct {
             }
             // Captures
             if (movetype == MoveType.All or movetype == MoveType.Capture) {
-                const attacks = tables.pawnAttacks(color, squares[i]);
+                const attacks = tables.pawnAttacks(color, sq);
                 if (board.state.en_passant) |en| {
                     targets |= (attacks & (enemy | bb.SQUARES[en.x]));
                 } else {
@@ -642,7 +644,7 @@ pub const Board = struct {
                 }
             }
 
-            addToMovelist(color, pieces.PAWN, movelist, board, squares[i], targets);
+            addToMovelist(color, pieces.PAWN, movelist, board, sq, targets);
         }
 
         // Generate King moves

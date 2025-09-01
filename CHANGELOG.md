@@ -364,3 +364,24 @@ Eval4 kiwipete         10571    4.965s         469.702us ± 38.323us   (423.056u
 Eval6 kiwipete         4279     4.927s         1.151ms ± 56.368us     (1.079ms ... 2.165ms)        1.153ms    1.35ms     1.395ms
 Eval8 kiwipete         606      4.283s         7.068ms ± 305.79us     (6.749ms ... 10.425ms)       7.085ms    8.114ms    8.474ms
 ```
+
+### v0.6.3
+- Better design for pieces bitboard enumeration
+
+```
+benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995
+-----------------------------------------------------------------------------------------------------------------------------
+Perft2 startpos        100000   1.243s         12.439us ± 4.97us      (11.618us ... 924.963us)     12.588us   15.404us   16.055us
+Perft4 startpos        988      5.053s         5.115ms ± 383.298us    (4.781ms ... 8.539ms)        5.054ms    7.055ms    7.118ms
+Perft6 startpos        1        3.114s         3.114s ± 0ns           (3.114s ... 3.114s)          3.114s     3.114s     3.114s
+Perft2 kiwipete        94714    5.014s         52.944us ± 7.649us     (47.23us ... 990.94us)       52.798us   62.397us   64.599us
+Perft4 kiwipete        47       4.93s          104.902ms ± 3.188ms    (102.552ms ... 119.284ms)    105.634ms  119.284ms  119.284ms
+Eval2 startpos         100000   2.741s         27.417us ± 8.515us     (25.044us ... 1.044ms)       27.084us   34.862us   63.304us
+Eval4 startpos         27334    5.022s         183.753us ± 19.687us   (170.63us ... 1.165ms)       183.045us  226.412us  234.151us
+Eval6 startpos         8244     5.042s         611.688us ± 55.106us   (563.411us ... 1.592ms)      608.148us  801.972us  962.805us
+Eval8 startpos         591      4.845s         8.198ms ± 919.238us    (7.399ms ... 11.793ms)       8.712ms    11.041ms   11.514ms
+Eval2 kiwipete         100000   2.713s         27.132us ± 11.331us    (24.047us ... 929.269us)     26.507us   37.374us   80.141us
+Eval4 kiwipete         14225    4.948s         347.885us ± 27.701us   (319.325us ... 1.36ms)       350.123us  408.475us  422.861us
+Eval6 kiwipete         5443     4.961s         911.618us ± 61.278us   (849.999us ... 2.136ms)      909.849us  1.099ms    1.232ms
+Eval8 kiwipete         807      4.4s           5.453ms ± 273.1us      (5.161ms ... 8.657ms)        5.406ms    6.542ms    6.654ms
+```

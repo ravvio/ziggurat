@@ -27,25 +27,24 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
     var white_targets = std.mem.zeroes([6]u64);
     var black_targets = std.mem.zeroes([6]u64);
 
-    var squares: [22]usize = std.mem.zeroes([22]usize);
-    var i: usize = 0;
+    var pieces_bb: u64 = 0;
 
     inline for (0..6) |piece| {
         // Black
-        chess.bitboard.toSquares(board.boards[Colors.ublack][piece], &squares);
-        i = 0;
-        while (squares[i] != 64) : (i += 1) {
-            res -= tables.piece_value[Colors.ublack][piece][squares[i]];
+        pieces_bb = board.bitboard(Colors.black, piece);
+        while (pieces_bb != 0) {
+            const sq = chess.bitboard.pop(&pieces_bb);
+            res -= tables.piece_value[Colors.ublack][piece][sq];
             gamephase += gamephase_increments[piece];
-            black_targets[piece] |= chess.tables.pieceAttacks(color, piece, squares[i], board.occupied);
+            black_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, board.occupied);
         }
         // White
-        chess.bitboard.toSquares(board.boards[Colors.uwhite][piece], &squares);
-        i = 0;
-        while (squares[i] != 64) : (i += 1) {
-            res += tables.piece_value[Colors.uwhite][piece][squares[i]];
+        pieces_bb = board.bitboard(Colors.white, piece);
+        while (pieces_bb != 0) {
+            const sq = chess.bitboard.pop(&pieces_bb);
+            res += tables.piece_value[Colors.uwhite][piece][sq];
             gamephase += gamephase_increments[piece];
-            white_targets[piece] |= chess.tables.pieceAttacks(color, piece, squares[i], board.occupied);
+            white_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, board.occupied);
         }
     }
 

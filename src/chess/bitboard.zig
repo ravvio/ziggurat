@@ -48,6 +48,15 @@ pub fn toSquares(
     res[i] = 64;
 }
 
+pub fn pop(
+    _bb: *Bitboard,
+) usize {
+    const bb = _bb.*;
+    const res = @ctz(bb);
+    _bb.* = bb & (bb - 1);
+    return res;
+}
+
 pub const EMPTY = 0;
 
 pub const RANK_8: u64 = 0x00000000000000FF;
