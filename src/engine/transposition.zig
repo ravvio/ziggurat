@@ -61,7 +61,7 @@ pub const TT = struct {
     megabytes: usize,
     size: usize,
     used: usize = 0,
-    data: std.ArrayList(Bucket),
+    data: std.array_list.Managed(Bucket),
 
     pub fn init(allocator: std.mem.Allocator, megabytes: usize) !TT {
         const bucket_bytes = @sizeOf(Transposition) * bucket_size;
@@ -70,7 +70,7 @@ pub const TT = struct {
         var tt = TT{
             .megabytes = megabytes,
             .size = size,
-            .data = std.ArrayList(Bucket).init(allocator),
+            .data = std.array_list.Managed(Bucket).init(allocator),
         };
         try tt.data.ensureTotalCapacity(size);
         tt.data.expandToCapacity();

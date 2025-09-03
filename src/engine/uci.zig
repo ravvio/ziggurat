@@ -30,28 +30,20 @@ pub const Uci = struct {
     /// Main loop inspired from Avalanche
     /// https://github.com/SnowballSH/Avalanche
     pub fn run(self: *Uci) !void {
-        var stdin = std.io.getStdIn().reader();
-        var stdout = std.io.getStdOut().writer();
-
-        var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-        defer arena.deinit();
-        const allocator = arena.allocator();
+        var inbuf: [1024]u8 = undefined;
+        var stdin = std.fs.File.stdin().readerStreaming(&inbuf);
+        var outbuf: [1024]u8 = undefined;
+        var stdout = std.fs.File.stdout().writerStreaming(&outbuf);
 
         while (true) {
-            const in = try stdin.readUntilDelimiterOrEofAlloc(allocator, '\n', 16348);
-            if (in == null) {
-                break;
-            }
+            const in = try stdin.interface.takeDelimiterExclusive('\n');
 
             // Trim carriage return and split on space
-            const line = std.mem.trim(u8, in.?, "\r");
+            const line = std.mem.trim(u8, in, "\r");
             var tokens = std.mem.splitScalar(u8, line, ' ');
 
             // First token is the command
             const cmd = tokens.next();
-            if (in == null) {
-                break;
-            }
 
             // Stop the search
             if (std.mem.eql(u8, cmd.?, "stop")) {
@@ -60,7 +52,8 @@ pub const Uci = struct {
             }
             // Ask if ready
             else if (std.mem.eql(u8, cmd.?, "isready")) {
-                _ = try stdout.writeAll("readyok\n");
+                _ = try stdout.interface.write("readyok\n");
+                _ = try stdout.interface.flush();
             }
             // Switch debug mode
             else if (std.mem.eql(u8, cmd.?, "debug")) {
@@ -86,13 +79,14 @@ pub const Uci = struct {
             }
             // Ask for idetification
             else if (std.mem.eql(u8, cmd.?, "uci")) {
-                _ = try stdout.writeAll(
+                _ = try stdout.interface.write(
                     \\id name ziggurat_0.6.3
                     \\id author Alessio Raviola <alessio.raviola.98@gmail.com>
                     \\
                 );
                 // TODO add options
-                _ = try stdout.writeAll("uciok\n");
+                _ = try stdout.interface.write("uciok\n");
+                _ = try stdout.interface.flush();
             }
             // Set an engine option
             else if (std.mem.eql(u8, cmd.?, "setoption")) {
@@ -166,8 +160,6 @@ pub const Uci = struct {
                     .{ &self.engine, &self.board, movetime, max_depth },
                 );
             }
-
-            allocator.free(in.?);
         }
     }
 

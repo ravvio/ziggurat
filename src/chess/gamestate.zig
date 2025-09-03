@@ -34,7 +34,7 @@ pub const CastlingRights = struct {
         _: std.fmt.FormatOptions,
         w: anytype,
     ) !void {
-        try w.print("{}{}{}{}", .{
+        try w.print("{s}{s}{s}{s}", .{
             if (c.x & CastlingRights.WK.x > 0) "K" else "",
             if (c.x & CastlingRights.WQ.x > 0) "Q" else "",
             if (c.x & CastlingRights.BK.x > 0) "k" else "",
@@ -63,7 +63,7 @@ pub const GameState = struct {
     ) !void {
         const ep = if (s.en_passant) |e| e.to_algebraic() else "-";
 
-        try w.print("zk: {x} ac: {} cperm: {} ep: {} hmc: {} fmc: {} next:{}{}{}", .{
+        try w.print("zk: {x} ac: {b} cperm: {any} ep: {any} hmc: {d} fmc: {d} next:{any}{any}{s}", .{
             s.zobrist_key,
             s.current_side,
             s.castling,

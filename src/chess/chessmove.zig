@@ -46,7 +46,7 @@ pub const ChessMove = struct {
         _: std.fmt.FormatOptions,
         w: anytype,
     ) !void {
-        try w.print("{}{}{s}", .{
+        try w.print("{any}{any}{s}", .{
             Square.new(move.from()),
             Square.new(move.to()),
             if (move.promotion() == pieces.NONE) "" else pieces.toString(move.promotion()),

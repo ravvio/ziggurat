@@ -30,7 +30,7 @@ fn testMate(
     e.best_move.removeSortScore();
 
     std.testing.expectEqual(expected, e.best_move) catch |err| {
-        std.debug.print("expected: {}, jound: {}\n", .{ expected, e.best_move });
+        std.debug.print("expected: {any}, found: {any}\n", .{ expected, e.best_move });
         return err;
     };
 }

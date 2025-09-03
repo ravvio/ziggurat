@@ -53,7 +53,7 @@ pub fn perftDivide(
     );
 
     var i: usize = 0;
-    std.debug.print("{}\n", .{ml.count});
+    std.debug.print("{d}\n", .{ml.count});
     while (i < ml.count) : (i += 1) {
         const move = ml.list[i];
         board.makeMove(move, color);
@@ -62,12 +62,12 @@ pub fn perftDivide(
             continue;
         }
         const leaves = perft(board, !color, depth - 1);
-        std.debug.print("{}: {}\n", .{ move, leaves });
+        std.debug.print("{any}: {d}\n", .{ move, leaves });
         total += leaves;
         board.unmakeMove(color);
     }
 
-    std.debug.print("Total: {}\n", .{total});
+    std.debug.print("Total: {d}\n", .{total});
     return total;
 }
 

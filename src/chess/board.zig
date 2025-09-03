@@ -26,12 +26,12 @@ pub const Board = struct {
     pieces: [64]usize = [1]usize{constants.pieces.NONE} ** 64,
 
     state: GameState,
-    history: ArrayList(GameState),
+    history: std.array_list.Managed(GameState),
 
     zobrist_values: ZobristValues,
 
     pub fn init(alloc: std.mem.Allocator) Board {
-        const history = ArrayList(GameState).init(alloc);
+        const history = std.array_list.Managed(GameState).init(alloc);
         return .{
             .state = GameState{},
             .history = history,

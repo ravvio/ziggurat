@@ -75,10 +75,10 @@ pub const Engine = struct {
     score: types.Score = 0,
 
     /// History of hashes in the search
-    hash_history: std.ArrayList(u64),
+    hash_history: std.array_list.Managed(u64),
 
     pub fn init(allocator: std.mem.Allocator) !Engine {
-        const hash_history = std.ArrayList(u64).initCapacity(allocator, max_game_ply) catch unreachable;
+        const hash_history = std.array_list.Managed(u64).initCapacity(allocator, max_game_ply) catch unreachable;
         return .{
             .hash_history = hash_history,
         };
@@ -115,8 +115,9 @@ pub const Engine = struct {
         comptime color: bool,
         max_depth: ?u8,
     ) void {
-        var bufout = std.io.bufferedWriter(std.io.getStdOut().writer());
-        var out = bufout.writer();
+        var bufout: [1024]u8 = undefined;
+        const stdout = std.fs.File.stdout().writer(&bufout);
+        var out = stdout.interface;
 
         self.reset();
 
@@ -169,7 +170,7 @@ pub const Engine = struct {
 
             // Print info about the search
             if (!self.quiet) {
-                out.print("info depth {} seldepth {} nodes {} time {} hashfull {} ", .{
+                out.print("info depth {d} seldepth {d} nodes {d} time {d} hashfull {any} ", .{
                     tdepth,
                     self.seldepth,
                     self.nodes,
@@ -178,21 +179,21 @@ pub const Engine = struct {
                 }) catch unreachable;
 
                 if (heuristic.scoreAsMate(self.score)) |matein| {
-                    out.print("score mate {} ", .{matein}) catch unreachable;
+                    out.print("score mate {d} ", .{matein}) catch unreachable;
                 } else {
-                    out.print("score cp {} ", .{self.score}) catch unreachable;
+                    out.print("score cp {d} ", .{self.score}) catch unreachable;
                 }
 
                 if (self.principal_variation_size[0] > 0) {
-                    out.print("pv ", .{}) catch unreachable;
+                    _ = out.write("pv") catch unreachable;
                     var i: usize = 0;
                     while (i < self.principal_variation_size[0]) : (i += 1) {
-                        out.print("{} ", .{self.principal_variation[0][i]}) catch unreachable;
+                        out.print("{any} ", .{self.principal_variation[0][i]}) catch unreachable;
                     }
                 }
 
                 out.writeByte('\n') catch unreachable;
-                bufout.flush() catch unreachable;
+                out.flush() catch unreachable;
             }
 
             if (self.shouldStop()) {
@@ -201,10 +202,10 @@ pub const Engine = struct {
         }
 
         if (!self.quiet) {
-            out.print("bestmove {}\n", .{
+            out.print("bestmove {any}\n", .{
                 self.prev_best_move,
             }) catch unreachable;
-            bufout.flush() catch unreachable;
+            out.flush() catch unreachable;
         }
 
         self.searching = false;

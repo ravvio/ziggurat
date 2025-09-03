@@ -17,9 +17,11 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "ziggurat",
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     // This declares intent for the executable to be installed into the
@@ -51,9 +53,11 @@ pub fn build(b: *std.Build) void {
     run_step.dependOn(&run_cmd.step);
 
     const tests = b.addTest(.{
-        .root_source_file = b.path("src/tests.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/tests.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
     const run_unit_tests = b.addRunArtifact(tests);
 
@@ -68,9 +72,11 @@ pub fn build(b: *std.Build) void {
     const zbench_module = b.dependency("zbench", opts).module("zbench");
     const exe_bench = b.addExecutable(.{
         .name = "ziggurate bench",
-        .root_source_file = b.path("src/bench.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/bench.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
     exe_bench.root_module.addImport("zbench", zbench_module);
 
