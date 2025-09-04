@@ -94,5 +94,5 @@ pub fn main() !void {
 
     try stdout.interface.writeAll("\n");
     try bench.run(&stdout.interface);
-    try stdout.interface.flust();
+    try stdout.interface.flush();
 }
