@@ -29,6 +29,8 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
 
     var pieces_bb: u64 = 0;
 
+    const occupied = board.colors[0] | board.colors[1];
+
     inline for (0..6) |piece| {
         // Black
         pieces_bb = board.bitboard(Colors.black, piece);
@@ -36,7 +38,7 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
             const sq = chess.bitboard.pop(&pieces_bb);
             res -= tables.piece_value[Colors.ublack][piece][sq];
             gamephase += gamephase_increments[piece];
-            black_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, board.occupied);
+            black_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, occupied);
         }
         // White
         pieces_bb = board.bitboard(Colors.white, piece);
@@ -44,7 +46,7 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
             const sq = chess.bitboard.pop(&pieces_bb);
             res += tables.piece_value[Colors.uwhite][piece][sq];
             gamephase += gamephase_increments[piece];
-            white_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, board.occupied);
+            white_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, occupied);
         }
     }
 

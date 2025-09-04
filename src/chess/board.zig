@@ -19,10 +19,6 @@ pub const Board = struct {
 
     colors: [2]u64 = std.mem.zeroes([2]u64),
 
-    occupied: u64 = 0,
-    checkers: u64 = 0,
-    pinned: u64 = 0,
-
     pieces: [64]usize = [1]usize{constants.pieces.NONE} ** 64,
 
     state: GameState,
@@ -191,7 +187,6 @@ pub const Board = struct {
         for (self.boards[1]) |b| {
             self.colors[1] |= b;
         }
-        self.occupied = self.colors[0] | self.colors[1];
 
         self.regenerateZobrist();
     }
@@ -357,7 +352,6 @@ pub const Board = struct {
 
         // Swap side
         b.swapSide();
-        b.occupied = b.colors[0] | b.colors[1];
 
         // Add move number and check if the move is legal
         if (color) {
@@ -406,7 +400,6 @@ pub const Board = struct {
             }
         }
 
-        b.occupied = b.colors[0] | b.colors[1];
     }
 
     pub fn makeNullMove(
@@ -546,7 +539,7 @@ pub const Board = struct {
     ) void {
         const friend = board.friends(color);
         const enemy = board.friends(!color);
-        const occupied = board.occupied;
+        const occupied = friend | enemy;
 
         const mask = switch (movetype) {
             .All => ~friend,
@@ -689,7 +682,7 @@ pub const Board = struct {
     }
 
     pub fn squareAttacked(b: *const Board, comptime color: bool, sq: usize) bool {
-        const occupied = b.occupied;
+        const occupied = b.colors[0] | b.colors[1];
         const attacker = @intFromBool(!color);
 
         return ((b.boards[attacker][pieces.QUEEN] | b.boards[attacker][pieces.ROOK]) & tables.rookAttacks(sq, occupied) != 0 or
@@ -706,7 +699,7 @@ pub const Board = struct {
 
     pub fn inCheck(b: *const Board, comptime color: bool) bool {
         const sq = @ctz(b.boards[@intFromBool(color)][pieces.KING]);
-        const occupied = b.occupied;
+        const occupied = b.colors[0] | b.colors[1];
         const attacker = @intFromBool(!color);
 
         return ((b.boards[attacker][pieces.QUEEN] | b.boards[attacker][pieces.ROOK]) & tables.rookAttacks(sq, occupied) != 0 or

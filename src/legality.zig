@@ -8,7 +8,7 @@ pub fn isKingAttacked(
     color: bool,
     board: *const chess.Board,
 ) bool {
-    const occupied = board.occupied;
+    const occupied = board.colors[0] | board.colors[1];
     const attacker = @intFromBool(!color);
     const sq = @ctz(board.boards[@intFromBool(color)][pieces.KING]);
 
