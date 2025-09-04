@@ -116,8 +116,7 @@ pub const Engine = struct {
         max_depth: ?u8,
     ) void {
         var bufout: [1024]u8 = undefined;
-        const stdout = std.fs.File.stdout().writer(&bufout);
-        var out = stdout.interface;
+        var stdout = std.fs.File.stdout().writer(&bufout);
 
         self.reset();
 
@@ -170,7 +169,7 @@ pub const Engine = struct {
 
             // Print info about the search
             if (!self.quiet) {
-                out.print("info depth {d} seldepth {d} nodes {d} time {d} hashfull {any} ", .{
+                stdout.interface.print("info depth {d} seldepth {d} nodes {d} time {d} hashfull {any} ", .{
                     tdepth,
                     self.seldepth,
                     self.nodes,
@@ -179,21 +178,21 @@ pub const Engine = struct {
                 }) catch unreachable;
 
                 if (heuristic.scoreAsMate(self.score)) |matein| {
-                    out.print("score mate {d} ", .{matein}) catch unreachable;
+                    stdout.interface.print("score mate {d} ", .{matein}) catch unreachable;
                 } else {
-                    out.print("score cp {d} ", .{self.score}) catch unreachable;
+                    stdout.interface.print("score cp {d} ", .{self.score}) catch unreachable;
                 }
 
                 if (self.principal_variation_size[0] > 0) {
-                    _ = out.write("pv") catch unreachable;
+                    _ = stdout.interface.write("pv") catch unreachable;
                     var i: usize = 0;
                     while (i < self.principal_variation_size[0]) : (i += 1) {
-                        out.print("{any} ", .{self.principal_variation[0][i]}) catch unreachable;
+                        stdout.interface.print("{f} ", .{self.principal_variation[0][i]}) catch unreachable;
                     }
                 }
 
-                out.writeByte('\n') catch unreachable;
-                out.flush() catch unreachable;
+                stdout.interface.writeByte('\n') catch unreachable;
+                stdout.interface.flush() catch unreachable;
             }
 
             if (self.shouldStop()) {
@@ -202,10 +201,10 @@ pub const Engine = struct {
         }
 
         if (!self.quiet) {
-            out.print("bestmove {any}\n", .{
+            stdout.interface.print("bestmove {f}\n", .{
                 self.prev_best_move,
             }) catch unreachable;
-            out.flush() catch unreachable;
+            stdout.interface.flush() catch unreachable;
         }
 
         self.searching = false;

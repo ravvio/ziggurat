@@ -11,7 +11,9 @@ const eval = @import("./benches/eval.zig");
 pub fn main() !void {
     ziggurat.initAll();
 
-    const stdout = std.io.getStdOut().writer();
+    var buf: [1024]u8 = undefined;
+    var stdout = std.fs.File.stdout().writer(&buf);
+
     var bench = zbench.Benchmark.init(std.heap.page_allocator, .{
         .time_budget_ns = 5e9,
     });
@@ -90,6 +92,7 @@ pub fn main() !void {
         .{},
     );
 
-    try stdout.writeAll("\n");
-    try bench.run(stdout);
+    try stdout.interface.writeAll("\n");
+    try bench.run(&stdout.interface);
+    try stdout.interface.flust();
 }

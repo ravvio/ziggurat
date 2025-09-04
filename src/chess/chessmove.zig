@@ -41,15 +41,13 @@ pub const ChessMove = struct {
     };
 
     pub fn format(
-        move: ChessMove,
-        comptime _: []const u8,
-        _: std.fmt.FormatOptions,
-        w: anytype,
-    ) !void {
-        try w.print("{any}{any}{s}", .{
-            Square.new(move.from()),
-            Square.new(move.to()),
-            if (move.promotion() == pieces.NONE) "" else pieces.toString(move.promotion()),
+        this: @This(),
+        writer: *std.io.Writer,
+    ) std.io.Writer.Error!void {
+        try writer.print("{f}{f}{s}", .{
+            Square.new(this.from()),
+            Square.new(this.to()),
+            if (this.promotion() == pieces.NONE) "" else pieces.toString(this.promotion()),
         });
     }
 

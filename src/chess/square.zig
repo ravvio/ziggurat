@@ -195,14 +195,12 @@ pub const Square = struct {
     }
 
     pub fn format(
-        s: Square,
-        comptime _: []const u8,
-        _: std.fmt.FormatOptions,
-        w: anytype,
+        this: @This(),
+        writer: *std.io.Writer,
     ) !void {
-        try w.print("{c}{c}", .{
-            fileToAlgebraic(@truncate(s.file())),
-            rankToAlgebraic(@truncate(s.rank())),
+        try writer.print("{c}{c}", .{
+            fileToAlgebraic(@truncate(this.file())),
+            rankToAlgebraic(@truncate(this.rank())),
         });
     }
 };
