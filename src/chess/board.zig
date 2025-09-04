@@ -4,7 +4,7 @@ const ArrayList = std.ArrayList;
 const bb = @import("./bitboard.zig");
 const GameState = @import("./gamestate.zig").GameState;
 const CastlingRights = @import("./gamestate.zig").CastlingRights;
-const ZobristValues = @import("./zobrist.zig").ZobristValues;
+const zobrist_values = @import("./zobrist.zig").zobrist_values;
 const ChessMove = @import("./chessmove.zig").ChessMove;
 const Square = @import("./square.zig").Square;
 const Movelist = @import("movelist.zig").Movelist;
@@ -24,14 +24,11 @@ pub const Board = struct {
     state: GameState,
     history: std.array_list.Managed(GameState),
 
-    zobrist_values: ZobristValues,
-
     pub fn init(alloc: std.mem.Allocator) Board {
         const history = std.array_list.Managed(GameState).init(alloc);
         return .{
             .state = GameState{},
             .history = history,
-            .zobrist_values = ZobristValues.new(),
         };
     }
 
@@ -253,22 +250,22 @@ pub const Board = struct {
         var iterator_b = bb.BitboardIterator{ .u = b.colors[0] };
         while (iterator_b.next()) |sq| {
             const piece = b.pieces[sq];
-            z ^= b.zobrist_values.pieces[0][piece][sq];
+            z ^= zobrist_values.pieces[0][piece][sq];
         }
         var iterator_w = bb.BitboardIterator{ .u = b.colors[1] };
         while (iterator_w.next()) |sq| {
             const piece = b.pieces[sq];
-            z ^= b.zobrist_values.pieces[1][piece][sq];
+            z ^= zobrist_values.pieces[1][piece][sq];
         }
         // Castling
-        z ^= b.zobrist_values.castling[b.state.castling.x];
+        z ^= zobrist_values.castling[b.state.castling.x];
         // Side
         if (b.state.current_side) {
-            z ^= b.zobrist_values.color;
+            z ^= zobrist_values.color;
         }
         // En passant
         if (b.state.en_passant) |*s| {
-            z ^= b.zobrist_values.en_passant[s.*.x];
+            z ^= zobrist_values.en_passant[s.*.x];
         }
 
         b.state.zobrist_key = z;
@@ -421,18 +418,18 @@ pub const Board = struct {
     }
 
     pub fn swapSide(b: *Board) void {
-        b.state.zobrist_key ^= b.zobrist_values.color;
+        b.state.zobrist_key ^= zobrist_values.color;
         b.state.current_side = !b.state.current_side;
     }
 
     pub fn removeEnPassant(b: *Board) void {
-        b.state.zobrist_key ^= b.zobrist_values.en_passant[b.state.en_passant.?.x];
+        b.state.zobrist_key ^= zobrist_values.en_passant[b.state.en_passant.?.x];
         b.state.en_passant = null;
     }
 
     pub fn setEnPassant(b: *Board, sq: usize) void {
         b.state.en_passant = Square.new(sq);
-        b.state.zobrist_key ^= b.zobrist_values.en_passant[sq];
+        b.state.zobrist_key ^= zobrist_values.en_passant[sq];
     }
 
     pub fn removePiece(b: *Board, comptime color: bool, piece: usize, sq: usize) void {
@@ -440,7 +437,7 @@ pub const Board = struct {
         b.boards[@intFromBool(color)][piece] ^= tmp;
         b.colors[@intFromBool(color)] ^= tmp;
         b.pieces[sq] = constants.pieces.NONE;
-        b.state.zobrist_key ^= b.zobrist_values.pieces[@intFromBool(color)][piece][sq];
+        b.state.zobrist_key ^= zobrist_values.pieces[@intFromBool(color)][piece][sq];
     }
 
     pub fn addPiece(b: *Board, comptime color: bool, piece: usize, sq: usize) void {
@@ -448,7 +445,7 @@ pub const Board = struct {
         b.boards[@intFromBool(color)][piece] |= tmp;
         b.colors[@intFromBool(color)] |= tmp;
         b.pieces[sq] = piece;
-        b.state.zobrist_key ^= b.zobrist_values.pieces[@intFromBool(color)][piece][sq];
+        b.state.zobrist_key ^= zobrist_values.pieces[@intFromBool(color)][piece][sq];
     }
 
     pub fn movePiece(b: *Board, comptime color: bool, piece: usize, from: usize, to: usize) void {
@@ -460,7 +457,7 @@ pub const Board = struct {
         colorb.* = (colorb.* ^ bf) | bt;
         b.pieces[from] = constants.pieces.NONE;
         b.pieces[to] = piece;
-        const z = &b.zobrist_values.pieces[@intFromBool(color)][piece];
+        const z = &zobrist_values.pieces[@intFromBool(color)][piece];
         b.state.zobrist_key ^= z[from] | z[to];
     }
 
@@ -494,9 +491,9 @@ pub const Board = struct {
     }
 
     pub fn updateCastlingRights(b: *Board, new: u4) void {
-        b.state.zobrist_key ^= b.zobrist_values.castling[b.state.castling.x];
+        b.state.zobrist_key ^= zobrist_values.castling[b.state.castling.x];
         b.state.castling = CastlingRights{ .x = new };
-        b.state.zobrist_key ^= b.zobrist_values.castling[new];
+        b.state.zobrist_key ^= zobrist_values.castling[new];
     }
 
     pub fn kingSquare(b: *const Board, comptime color: bool) Square {

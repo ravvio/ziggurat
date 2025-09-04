@@ -1,35 +1,254 @@
 const std = @import("std");
 
-const SEED: u64 = 0x31_18_9e_a9_c1_97_0a_ef;
+pub const zobrist_values: ZobristValues = ZobristValues{
+    .pieces = [2][6][64]u64{
+        // Black
+        [6][64]u64{
+            // Black 0
+            [64]u64{
+                0x93abffa5142603da, 0xbd4898c8f21dd8d9, 0xe4dd16595235fd6d, 0x5a8cc17de0160a08, 0x90048468b2582d1d, 0xbc18c417c1f462d2, 0xc079f1aa6087c5b7, 0x9682c99c31b69ab7, 0xddc8e6aa39c22d06, 0xd50bc7e659a576f2, 0xc9664dbf871bbe1b, 0x9d6ba01cd8bcfcce, 0xb16cedc1696d9c2b, 0x46b955b5988472da, 0x4d29068ffee6fe2f, 0xa33ff170d48690d4, 0x7f78a3090861b77f, 0xf2937536b45a99fa, 0xcae1952f03f5e557, 0xb8632974353ca059, 0x200c39a5844b8be8, 0xf2ea18454a3c9ed7, 0xb0b66fbb624a6376, 0x3a4761a0b4ece73c, 0x062d8948b5917e19, 0x762ba4b5b0f0b745, 0x942fca38bf429c8b, 0x710b02d515c468e5, 0xd0208b6572fc8bd8, 0xa9f3c9a98cc7dfba, 0x92d61c5d78cec84b, 0x73e8baa539dce63f, 0x9d8f3fae31bf41cd, 0xf7ff503efc9113e4, 0xdeb5b7c46bad006c, 0xf9dcadc6dcff0eee, 0x4c340c0cae59ca3a, 0x7e07c1bce898f122, 0x792522d5b1c15323, 0x635945eee306722e, 0xfbe3cd7e284c6b07, 0xed1ab1468aa98cd6, 0x160de6b2bd2edee0, 0x001f53622309a1e1, 0x77ec6f545dac20b3, 0xc7d869c1b8b4d5c9, 0xbb8b82cea0d34b09, 0x644bc9a30330bdff, 0x0db4eca1d4af000d, 0xfe4c94ed01e9b119, 0x047dfa558a1d647c, 0xa305dca0c45168ee, 0x0d58c965fef31357, 0xb070eea6ca1de518, 0x133bafb621498ea2, 0xcb326a1a13289272, 0xba45d49262161860, 0x713d67f98f683d69, 0xdd8ff911184eef74, 0xca4c359a34a51fe3, 0x33f99d0cb65582ff, 0x4bcf734fbd48bc9a, 0x69328b2f4d4c8521, 0xbe64182c4ce9c406 },
+            // Black 1
+            [64]u64{
+                0xd6b1a9c7a7a936f3, 0x00f63207f34dc6a8, 0xbb06993fd1af8478, 0x0b8d9806a5778063,
+                0x3b81388b4e5660a1, 0x45f9ca79f9cd0fac, 0xde6ac68758ca7603, 0x65bdd61710b2f0b8,
+                0x8761c205533640f0, 0x0bf290e8fd7d8a36, 0x2738e749a6110f14, 0x3f749e613a328efb,
+                0x55cc6ccaded4642d, 0x447497b168f51b53, 0x1f6aa677f753f973, 0x3a323cf917ccdc25,
+                0xec39a5802cea21d2, 0x2037a64d6c0bfb29, 0x20cd42172d599d0d, 0x017ed86ffdd10188,
+                0x8b84db578c486ad6, 0x0eb81f1578930c32, 0x5630706946578e3d, 0xad275e1600781f5d,
+                0x84062bcf46d746a0, 0x65b7867aedcbce19, 0x6bbc141cb89a3ee1, 0x60c8e15cf4d462b5,
+                0xe15464a8320cae75, 0x92e7987bd5b6da71, 0xe3febc012f256e63, 0x06d50f372e9d2903,
+                0x5e4679587377abbb, 0xfb6d3a1f6f44a973, 0xbb3a6b9e5ca9b87f, 0x27adda03acfad955,
+                0x976b5aedf4061856, 0x93bc02adcc83b669, 0x3d56e97db5e818bb, 0x4ccbb0466a2fff5a,
+                0x1d89d9ebe8fc652a, 0x458332b19137cd82, 0x4d15d0496c37fd26, 0x6d6c3d99aa2e9474,
+                0x82b3314925c1d6ca, 0x1c7fd9eb4634c503, 0xbaaa1687535bcc76, 0xc1128f4cdfbe1ecd,
+                0xf8cba2f3e0019fe1, 0x33e0aa84a83598ee, 0x4c44ca88543fb2e2, 0xa4f999af2c0769f8,
+                0x242f45b614228488, 0xcb46ad18cfd6828e, 0xf156b04689fbc15d, 0xf0c12bdcb767c5f2,
+                0x10221a3f27dd600a, 0x262f0b7601f62df8, 0x0b5273381e0bf8f4, 0xc868a782e6e30ce5,
+                0x93440b1115991c3b, 0x8871fd31c743bdff, 0x3790606ce9815890, 0x35429a11305eb9d0,
+            },
+            // Black 2
+            [64]u64{
+                0xc90553beacff8f5d, 0xc8073b4ffaaf6844, 0xfca3f49245592630, 0x528ac7fbbf69fa57,
+                0xa49bd8d6b4cec771, 0x9795fd06bbdcaa37, 0xbd9b2b5c0e870500, 0xcef791238cfe6fa0,
+                0xb7cfcdeaa52a2087, 0x315ac4e7e6af5723, 0xa08aaa192505b840, 0x1fcd824e0b311c2c,
+                0x28f560c05a693bab, 0x0cab0366ebc4f4c9, 0x55f2d51e0019889f, 0x45da6e4a8f6eb308,
+                0x95cafcdce86c7bdb, 0xf9fe738eb2d322d1, 0x0614d66677718f23, 0xca9ac8914310370b,
+                0xe873924c8f0e53d6, 0x5f44ed47d3d53e9e, 0x6bf80d706067deff, 0x24a2f6dc8df9cb1c,
+                0x7080d32ff535be10, 0x3646be8a55d46f8e, 0xff8c79c6e1f1abc2, 0xe186b41c0dce13b3,
+                0x007db4941cec1ccd, 0x06d4acd27c9b5f57, 0xd5979254dc55cc51, 0x28df1e5215ac9c82,
+                0xfa8f0eeca4f8bf94, 0x28908f704dca56f6, 0x531ed3769a6610c2, 0xa37b3bcb9a52853a,
+                0x5a5229923edb5aa1, 0x47cdb04b47cce08a, 0x327e8495aa0fb15f, 0x69a8c09c234f6670,
+                0xbd53107a33a5bcb5, 0xf0e6e81d2ade0db9, 0x3b39b328ea95cd1e, 0x835070b75913ae53,
+                0x74b75a089e6dab00, 0x655337ef46775cb5, 0xb5a86c26712d979f, 0x6ae92899c8552bec,
+                0x9e1b33bebf5b457f, 0x479ffe16b1967a4e, 0x71d96a2fef324f82, 0xcd525d9de5e7d02f,
+                0x2d89184e42a6cb89, 0xfec5f56db868b26f, 0xc0e9e7196bb40b77, 0xf682494e1c49c1b0,
+                0x7b272e41dc5d88ed, 0x10f9a773b3deaaac, 0x12c4bd4395fde2dc, 0x4568fe2196bca200,
+                0x02705f8fa8fbdf06, 0x59fdbd06ec2bd1f1, 0xaf43470808ee2ca8, 0x9a168616fde85e57,
+            },
+            // Black 3
+            [64]u64{
+                0xd0521d49867f142d, 0xcddba6247ec5f83f, 0xf917d5fdc977788f, 0x46d5dfc23512930c,
+                0x6ec6996066951b4f, 0xfe0ce95bf1c0b938, 0x133c6e06ba3aa8de, 0xc1cc2da4a2b066f1,
+                0xca254b67c73c6053, 0x854a3ac03768c4ba, 0x4d59fca4a4b35e0c, 0x2d035ebff2cadffb,
+                0x813d359aa9921225, 0xfbbdd8fa1b452cb8, 0x229cd4d4dd57260c, 0x42330aa12d12b6e9,
+                0xfcfe301a24e17637, 0x2d93d33202be14ad, 0x32921461d3ddf58f, 0x65ff3cf0a86d5cc4,
+                0x9d4460eddb004cb5, 0x223f0b0be408613e, 0xd98ab82777a7ea98, 0x121d8b761c90e928,
+                0x54e9de34b44269a1, 0x9bc62d0dc32f0195, 0x73d83c1be59be31c, 0xeb80db12fad073ab,
+                0x79975b20ff545310, 0x72f30926556fc887, 0x42e5f72000db33a4, 0x2274a8f0cf0eece0,
+                0x71e4b4430bb25645, 0x875e206c8850cb59, 0x4576d06662da687c, 0xe697168c24016464,
+                0xfb758dafc4edb34c, 0x7f7ff6c3c2e74697, 0x6d63b86398337f75, 0x7dbe75a77785adcc,
+                0x98ab2e2bc3b66a27, 0xf74cc29f61f6730a, 0xbbab96b83077d1f4, 0x9a9a9b38f0aa7d19,
+                0x223e35d11d7ee588, 0xdfe3a7eac4cf85f6, 0xd70190f5c3050c6e, 0x17a10de3d958ffbf,
+                0x17150125a1a0c3d0, 0x36800e2996dd8d40, 0xa27274483756f197, 0xd531c0d28841229c,
+                0x4e8e0ac4d41a0c06, 0x64aa3198ec4c9e9a, 0x935b9c57e2a609d8, 0xa084c40f5c220e75,
+                0x21b19ca376223c05, 0x8aa1b21764b471a6, 0x7f9f1e024acf2365, 0x2a70d3d8a3a0a080,
+                0x1acac4c537c855cc, 0xdd703004b4b465c1, 0x1ffeba5b3a0fa2b6, 0x32c4864c92e17984,
+            },
+            // Black 4
+            [64]u64{
+                0x34d3d7e7dfb9b247, 0x7a8e982c2026f433, 0x104792f3e90bf947, 0x8e92ea82bf38f59b,
+                0xc470a039cee952d4, 0xe6518bb7c732314a, 0xba87ebe14b84ebb0, 0x93e84c25d7a3a5bc,
+                0x18cf4d1014116abb, 0xf24bd7e797dee9f6, 0x7cba49d586e5bcf9, 0x71cd9b2883c9c7de,
+                0x6110d6fd101409f9, 0x50e189dad1e31568, 0x6cb8de22213e1720, 0xdf6acf938491d4f3,
+                0x594a7a12d6f2996d, 0xf8bbc10f6edacbfa, 0x389ac048afab1df7, 0x8b0fc7413b608e7c,
+                0x8c1924e90364fd81, 0x096652d059c4eeda, 0x6ed8b7b92c110521, 0x5cba9e88c77c481b,
+                0x248835c49719dbf7, 0x9fa43f69297ebbeb, 0x93305a56285d3c3b, 0x2f25bc10b70010d7,
+                0xd1e4e92e249d9c5a, 0x70e7e1b3ddb006e5, 0xd30f593cf16d185f, 0xe462a4f78b542bb8,
+                0x1703702e52e134c3, 0xec69ec1872864636, 0x06fd77d315d1bcdb, 0x42fc5e44bc346049,
+                0x6bb74fb78ded7df7, 0x7e8e274b61efa184, 0x07e04a585a8216ec, 0xa57b2821ad0603a4,
+                0xf849e342af4a9a74, 0x94673f20f38aea49, 0x6ba4ea74a63bb052, 0xe0b97c52ddcf3b38,
+                0xb790b042b38f57b3, 0x9df284d2fa9f3ba9, 0xdc6f54676ed9ca23, 0xafa239760bd9c2e7,
+                0xb2126a8e66397e91, 0x41246c7e2c9cf277, 0x0d311921d4ea8fc7, 0xf70655768ae3d81e,
+                0x60d2607fe6c1012c, 0x9049d268253e5287, 0xb2ab80595192c7cc, 0x116e253312c83050,
+                0xc852b600f91dba09, 0x097cf17a059788d3, 0x1899b38599d7acca, 0x5e781b8ee4af811f,
+                0x075563f431e5e818, 0x46b74c5c529ea597, 0x5c4e6b8b27bd6cde, 0x7b2dd7d0464703dc,
+            },
+            // Black 5
+            [64]u64{
+                0xdfa6badf4e8024aa, 0xcf1ddb79d6deac5a, 0x104c0bb25f9ad624, 0x9b0f60979a64d158,
+                0x044c9e8f617e9b60, 0x7411626106f0a264, 0xffdd6b00522993d8, 0xcf27e4e704d1ddbc,
+                0xb4f3c990adfbb7b4, 0x8a306d83c0812222, 0xb1fa62d76e4f5e98, 0x5c3d7e302a7c1251,
+                0x2d548ca868bbc6a4, 0x27e6d8156c01cccf, 0x036bdbf47591668f, 0xa3892763c8d31d9a,
+                0xb72368501242eddc, 0xf8c868ab648e073b, 0xb5dfca56e00d02cc, 0x9e83258db9b06b95,
+                0x34f9b7240deadb60, 0xd873f4929a1e4467, 0xdd6b0c501e85894f, 0x2d510b682c0994dd,
+                0x02378035a1365ca5, 0x4101140e4cc060f8, 0x6ac8fb7dd9407a13, 0x422321e31c61ea0c,
+                0xecf4a099ec1a3aaa, 0x6af674ff4a9bf985, 0xffd0c9ffefefcbe1, 0x51ba4cb4045e788f,
+                0x76057c41ff4f3ebd, 0x58b0a53ef3f788d3, 0xfc5105d0bb1b4dda, 0x73bcb2d4be6e807e,
+                0xe69afa24ddd479f4, 0xc029dbc98773dfda, 0x8f42dce96e7d0003, 0x5c700d1c21372d47,
+                0xe99c8b8941ba5ceb, 0xd4546eef7c407e8b, 0x6ad1f19a16880264, 0x09986efaff3cf812,
+                0xa9246ee8719bf48f, 0x16a6d2f42a36c2d4, 0x751d8ca7abfaa533, 0xfd71b895157a52b3,
+                0x9aa9e4bd7c4d408d, 0xa69627c1c93beedc, 0x3d9a1e182baaa6a0, 0x6cee668c8725be9b,
+                0x4199701863d8ccd6, 0xa0259a6a47df5dab, 0x572c9f462271bafa, 0xd3d02ea024ff522b,
+                0x0ac25431a5c33d87, 0xe2c3cf9bf0b3f46f, 0x4cda8c68787764d6, 0x7707cbf643bc7ca4,
+                0x54e35426044fad7e, 0x1570ad2e2ba04707, 0xd88ec7a94029c178, 0x68c1028bb222e7de,
+            },
+        },
+        // White
+        [6][64]u64{
+            // White 0
+            [64]u64{
+                0x173e32cd794c27bf, 0x6107444be39264d5, 0xc45cdb399172d87e, 0x19d11964b2262b5b,
+                0x2e3f73353a63f633, 0x52ab5a8fbb397998, 0xaf85869853170f7f, 0x4202ea2160d5f0e2,
+                0xb1aac97c1c3047bd, 0xb9459acfe42b3b96, 0x31b03fecde264c4d, 0xce15194b5e50e6be,
+                0x942c21f987992bf5, 0xb946d943bce5ff0b, 0x083c0cf190bcfe89, 0xe620c637ea52f909,
+                0xb10733f0c3ac173c, 0x0c469115c661e775, 0x4de6201205ae27e3, 0x6c050c835172604b,
+                0xed7fbc96bcd9b231, 0x1e2dc3aa6f6d633a, 0x41c291bd31201774, 0x125595c9968bf1d7,
+                0xed184f2f99145305, 0x0da574ea93bb9fb7, 0x0b50925d05f73c59, 0xa4b8631bf5f1f86a,
+                0x40b4d6d01f81173c, 0x66a6fcad30d2c009, 0xcbfc2cea6bef43a6, 0x4a9ed529ea56eba5,
+                0x3f6b6dac34f71245, 0xb2432352d5d9e488, 0x603075b490525031, 0x7e12778b28e28548,
+                0xce387edf7eac6dd1, 0xa66a1428a3716f26, 0x14c722e537212606, 0x6b976b92e9f62ba1,
+                0x540e563d8cd50078, 0xbe333daf1ca48b73, 0x1a165e32019baa45, 0xf07c2bea30d6c711,
+                0xe96d965dd7408038, 0xbbc2a82371e5a5f5, 0x07e49343996f7d48, 0xc6672b61fef5946b,
+                0x4abece62b21cda18, 0xf08f2db743ed3e26, 0xcfd8ab7e953ca2bf, 0x044bc7102a89f28b,
+                0x6e13819f9511fea9, 0xe73418d9dfe12de5, 0xb28f71066bc7cb87, 0xa001a67bfe0d4e0e,
+                0x7ae8b0127b19e2c2, 0x8282388f7cf09e0a, 0x7c084209c7008782, 0xbac6b7e56f9c8451,
+                0x82c32d2321e02cda, 0xdcf5797ab2c53555, 0x54b7b2405ac97244, 0x9c296c6d6817031b,
+            },
+            // White 1
+            [64]u64{
+                0xbd081f69de0dbd32, 0xf53c9bcc35f444e0, 0x5cb8a97d8ad85e88, 0x0e495a6257a8162a,
+                0x8d6e41ee097bc73b, 0x37fe8439cee27cff, 0x8d969a1d6617a66e, 0x179adab0eddd56d2,
+                0x76eaa864452f2688, 0x2fb4ae8d77ad786e, 0x1aa29f96a5e22c6c, 0xdf95e090a61286fe,
+                0x743a1d8e210d0323, 0xe6336b98bec650de, 0x863ddf8a2ae87f19, 0xd3761fffa92ad0c4,
+                0x6998f206758bd45a, 0xa9fe5d9673b11756, 0xff27ac7329974859, 0x08432db1ca4ad6d2,
+                0x9b0c6a5aed67f628, 0x6572d7459ae72391, 0x591f428bca762219, 0xafa01bf1abf2ad4d,
+                0x36ac8735d1231b99, 0x7d371807535667d6, 0xd053e4281fc3a1a8, 0x667bccb9b74c2877,
+                0x4008893440527b56, 0x77f32ae645b89dcc, 0xe0e8c075bf102ecb, 0x21613351ba3a44ac,
+                0x9588e8c1a634ac62, 0xb1f9669b70d00f84, 0x033d62b22fa4004a, 0x92bb8930b7aa20ff,
+                0x3d37e0231dcd4acf, 0x771acfcf6e4410e7, 0xd43207b67739992c, 0x38b3ef0a0db5c402,
+                0xf5bf9bfa99f3d5ca, 0xadb28c61becbf42b, 0x02b740cc77c68ffc, 0x16f72f40163e2c4d,
+                0xeb1430e98094b5af, 0x40239eca18b2e277, 0x335a766f40d41732, 0x3b752f6f39781f36,
+                0x37f84b37725a7fec, 0x2e081a833a10a9b7, 0xad4a34c47894d025, 0xd549a359a9ed2521,
+                0xa7f104dbbd4263a9, 0x91d9897db23a15c1, 0x4311d245d0ffd6d5, 0xc8b7830973739f95,
+                0x59118dde0f533496, 0x2604960b1cb15d97, 0x960c3abe08039153, 0x7891ee6e6a8425ef,
+                0x39be6a701d92a7f0, 0xbf3fd74b999af87c, 0x0b641b8b793dfe7c, 0x7a704820e1f2f716,
+            },
+            // White 2
+            [64]u64{
+                0xf064c546ca62ed33, 0x6dd07addecb719e3, 0xce0a86a57477d792, 0x80ad26568f519240,
+                0x28aeed834e31fc56, 0xec719062eb464ff9, 0x734580aad45dce27, 0xe1bcc6669f293a7f,
+                0xa52f18ec3f0d2f6c, 0x5588799cfa90968d, 0x9296c0c55532c4b2, 0xedea5129218f683e,
+                0xeb62eda56d853fa9, 0xfb7421872d16e821, 0xaab943a52fc959cd, 0x7e7c943463a3f9dc,
+                0xb3167a03fb84f99b, 0x46badde6e8c1c991, 0x2dbe033d2ebace4c, 0xfc74ebc98bf3b9b6,
+                0xefc6ad5138ace68e, 0x264956375b932eb8, 0x79261f04a7898610, 0x50c9b5612b13f2be,
+                0x373986ac381e538d, 0xf4282ed70eeeae00, 0x57ae512ac1c1857d, 0x8871112806ceac39,
+                0x114bdb3221fa627d, 0xdc462533476d7df9, 0x572a94745adae1a5, 0x0d22aff39ae5901e,
+                0xece8755b3bd3b3cf, 0xe5074fc01ecf6eb7, 0x29462e98db13fe64, 0x0cf9692f5cdeb4e4,
+                0x67e1c9b1047646ae, 0x8e6848b1a64e6090, 0xd32bfe1fe610c1c2, 0xa4986790af826e47,
+                0x9b70c6294f030581, 0x4f5930e96a161573, 0x0dac64739e2fea4b, 0xc8eb9b34c526397b,
+                0xc342e028d55ebbda, 0xd2d4d6d585b8e9c0, 0x1c0fa020f000a4a0, 0xc6a187010bfe9d5a,
+                0xd82347aa945faa2a, 0xbff9571de4b92f58, 0xa96b9d428a3c0f03, 0xc99a25a77261e510,
+                0x6795a5e085e7a16d, 0x4a3983ff0d5ef963, 0x6374d02c94eb9cb1, 0xe0151080f64ec070,
+                0x5c694baac772500c, 0xfeca95b77f262913, 0xb6164e8e394ed706, 0x25002750f7d7b670,
+                0x8218bd69e69272fd, 0x6588a3a7355fa156, 0x116397b845bcca11, 0xb6e99676401617d7,
+            },
+            // White 3
+            [64]u64{
+                0x4014f5bbf87306ac, 0x463b5f1fedd6ea60, 0x38d15bc6c75ca8e5, 0x262d7890c897fab8,
+                0xc3a71897d111bad0, 0x31c8f71176cff505, 0xe6d905d8e8fe6e09, 0x744fbb436125e0f2,
+                0x728d8f34df569cbc, 0x497f1642a4de8ad9, 0x7f489d5c470486b6, 0xe128801f20fa4a6c,
+                0xc5a7130ef4e32f04, 0x1d4e2318c0c67b7a, 0x3907e605d4bfda1b, 0xe639e01c5151435b,
+                0x81c575ce656381a0, 0x0f50fb8792ed0656, 0x3e9b6be5d1be5697, 0xecbfc02906aabad9,
+                0x0c98096450145aed, 0x8077e56a9ea6f13f, 0x834e509c6792c29d, 0x8c48adbf7ee3ba01,
+                0xe70813fe6fd84788, 0x4fb450976c3de693, 0xdfb0dbb82c203cda, 0xc9ef285ceca1ff16,
+                0xee6a01d2752f4078, 0xd4a1d3b530164d5d, 0xe46c5b890ee04622, 0xd2124b0a697d611e,
+                0xe192ce99c74250ca, 0x442d5046ac2ca3fb, 0x1232f0c550f4138b, 0x0552d1834ddfb3ae,
+                0x96ba045989ec5466, 0x1517b5b38fb3fff5, 0xa207760fbc22c5dc, 0x1a791004e4803131,
+                0xc0aa9331daf925b4, 0xb45c3759ff424f93, 0x830cf7ff837a6d8c, 0xa6d08835c8616708,
+                0x5c687d57c84cd3b8, 0x1b9bf58a2f9f6bb8, 0x18547e07377e45d2, 0xa50af5d83205b50b,
+                0x426d95c2a2824c8a, 0x8e7f264dd0547a60, 0xc023df324e285e9f, 0xe23141a95cfe9626,
+                0xe6361397e890f4c1, 0xd600de428fce877d, 0x13c27830195e84f8, 0x7bf351039b6936b2,
+                0x685c9ca5eb110892, 0x00e4e8533e479852, 0xaa0e7328b8d39577, 0x79e3782d0f439006,
+                0xe18e65e30d512fad, 0x0273a0ef69bae313, 0x7c8973fc5498872b, 0xd9825e5f64d85559,
+            },
+            // White 4
+            [64]u64{
+                0xc8dadc65080d943b, 0xc45fbbcd80f984c1, 0xe708d0dd8c956d20, 0x586bccfe89bd0187,
+                0xb9544d576e89ee94, 0xae18f8eff0967cb6, 0x2fa50ba57c8aa27c, 0x6b63cbfa42833b88,
+                0x685e8aa2442542d6, 0xf541d14b40bacd93, 0x6c647a648fd8dc5d, 0xc31df8c7700d0a7b,
+                0xe86cbe1a2fb84d6f, 0xd080d7c8a2fa1ed5, 0xc61737fa97d561a5, 0x21dd4f2664ceef1e,
+                0xeadc570e0aab4696, 0x39c63661cced9083, 0xc45936b5c6055e0b, 0x7a54dec06d9a2e69,
+                0x6eaa2bdae3ba3686, 0x6b796ce665c3c745, 0x677e1d93c3f25f0c, 0xfbadea83d5cca79b,
+                0x43bbcfd4694f53f1, 0x86a1652e44e32be7, 0x321c62854396c4c7, 0x16672695fb2f8d9a,
+                0x7c5daf3cc4e3676f, 0xe75e71488d4d7556, 0xa436215d5030b739, 0x11f740cc852af6c7,
+                0x7e39d482006dfbb4, 0xf0f748162fa7162a, 0xa476fc1f951f4a3b, 0x26f4c360bb59ce00,
+                0x6866394cde03a622, 0xbc3b35e7e42b9887, 0xe20542bde6b7e9ad, 0xc32c85ea62f87cd6,
+                0xf142d801fec70cf7, 0xaabd167cde8e799d, 0x3b4408fb3cc9cbcb, 0x6899ff88cc2be8ae,
+                0x5e5ab4b71101e826, 0x08600b9f9a8c7dde, 0x2a7c4d001f4eb358, 0xac6165c0092bc208,
+                0x88234229701a2bf0, 0x2dd60e0bfef7c8f0, 0xbe57f62a5836c1f1, 0x3f29f0041456b17c,
+                0x19b3dd93a45639e2, 0x584605bbbb50a73c, 0x55f53864dbb48204, 0x50dcf4cd5a3ce0bc,
+                0x6f2511ca936fa450, 0xc52a50457bf71c2e, 0x3dcf03b8a21fe65a, 0x5111fc6f62e4dbb5,
+                0x393254b0ec4c4860, 0x451552b9b5e11ceb, 0xf103c315fd9a7b6f, 0xf4ee7fa8583b68d9,
+            },
+            // White 5
+            [64]u64{
+                0x797810f077afa173, 0x1ff7538d06a50ad1, 0x61dfb9108be0ccb3, 0x05d3c18b99396e41,
+                0x6904e4379616a12e, 0x3010238ca9ad077f, 0xdcf6869b169ba986, 0xe58ed76026fd8551,
+                0x315ed617683c08e3, 0x949090ba2c54ed3a, 0x3231574a3b670a87, 0xb7ee6aba0af762f3,
+                0xb04ec15e7f2bf0e5, 0xea65776a74ad149a, 0xde812811e5fa6b79, 0xd23fdebe63267397,
+                0x9b63db48e05dc9c6, 0x550c1b99c8af33e1, 0x3934308149be3295, 0x54b1e539591b6214,
+                0x86f6925b050fd407, 0x60907fcfa6e5efdd, 0xad97e4342235fc4f, 0xdaf2216d3f016ed0,
+                0x02faa593bd8b9527, 0x644bcd423cb8571c, 0x989b5213594e0612, 0xdea52ac718523452,
+                0x6ce89d65f88a1845, 0x42a8b2dfa8a13765, 0xe46411fc3256ac81, 0xaeac984c9941aff7,
+                0xf2efc6a992109f15, 0xad2cc0419c18568e, 0x2b4c8429f0bcf518, 0xa375731e6a4d928f,
+                0x0d66ac26ac929769, 0x327ae613c44e364c, 0xd31055db5bb39c87, 0x8854e02c9855c42e,
+                0x68097ecab8407b70, 0x1de2d3020b96a654, 0x499318b2e08e58d4, 0x9b98a9e5649d0f98,
+                0x49891c9dda00b835, 0x581fad1cca7c0523, 0x4195bbbef56f0801, 0xaa6c404e75324303,
+                0xdfe6abc645b77669, 0x47431bf30ffa41b5, 0x66201807e8631bbb, 0xf2afee625ba1b5e5,
+                0xd7e30361f1941981, 0xc6fc0763c6f555cc, 0xa650d34b59733375, 0x4776d038bb131613,
+                0xbea3a9372293ac84, 0x4ab30b577b85a90e, 0xbfb86952c4d76f6f, 0x43127bf2ae22c550,
+                0xf8c71fc989e6bfc2, 0x7d49e743b17dcfe0, 0xf726f4129c19ab4c, 0x2c5bc2f681279cf0,
+            },
+        },
+    },
+    .en_passant = [64]u64{
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0x542a0a58375ec291, 0x5b04f4ca0621a738, 0xaddf3f9f3bd0e1bb, 0xb7292e5eda0f1779,
+        0x5c1c46a874d23347, 0x50541162da7c2f06, 0x0b9f10f64b1e3bb6, 0x79eff86870f3c7a2,
+        0xe02d83813197aaac, 0x4b2bfd3d22ce750f, 0x00c686c8c5cdf4b9, 0xa379bb4dc9ec738e,
+        0xc3278d26cde186da, 0x3a4a9910961c113b, 0xb5c58bc15e7fb60b, 0x3df093ba97d35f32,
+        0xc05991577fa38b38, 0x0132a5e93df903f0, 0x3602450fa368004f, 0xe920d59e6c26a453,
+        0x58542c166ee2a44e, 0xacbe9e43f2a6aa91, 0x435aed25c2e9cffc, 0xa15319d1189dc872,
+        0xf93713581506f1e8, 0xa61731dee2be5fca, 0xd01e7466e5bfd6b6, 0xfbcd7a029c978090,
+        0x6d946d62db50eac7, 0x0f41a641a2979bb7, 0xdc3f0a6a21fd17ed, 0x1b746e9201e2318d,
+        0x4fd81803862929a1, 0xb562c270ad79d24e, 0x41bcd2ae1f376f94, 0xc95d4eaf35898e46,
+        0x771470a3f1db9dd9, 0xe5de0a33c2abe531, 0xb188edd868137da7, 0x4385b64e9fa2a865,
+        0x5d38d9e2fd00b773, 0xa867970a227e54c2, 0x1150f87eb04bdf12, 0xeafdfbd50175c8df,
+        0x13a5e764bdef553f, 0x611deb2149a5d914, 0xd4a60e7201b4794c, 0xda8f215fdca7b8b2,
+        0, 0, 0, 0, 0, 0, 0, 0
+    },
+    .castling = [16]u64{
+        0x9aeacb6492e816a4, 0xf1b99e5842260d22, 0xea268d395801dc5d, 0xf2b262d84475d850,
+        0x90957efcaaab5577, 0x9cf57dd7fa18ca93, 0x57a596a4272b3916, 0xe090929ab19ca3fd,
+        0xe08958fd0d6e6c73, 0x45bf7c7da9ba082f, 0xffc1bfef344888a8, 0xe22eda59649e398e,
+        0x6857a120b2f97d5a, 0x92c449a552bb0071, 0xb36b69a92ed830cb, 0x0cab7045fca5d5a1,
+    },
+    .color = 0xa1136641a7bdd97e,
+};
 
 pub const ZobristValues = struct {
     pieces: [2][6][64]u64,
+    en_passant: [64]u64,
     castling: [16]u64,
     color: u64,
-    en_passant: [64]u64,
-
-    pub fn new() ZobristValues {
-        var rand = std.Random.DefaultPrng.init(SEED);
-        var z: ZobristValues = undefined;
-
-        for (&z.pieces) |*side| {
-            for (side) |*pieces| {
-                for (pieces) |*sq| {
-                    sq.* = rand.next();
-                }
-            }
-        }
-
-        for (&z.castling) |*perm| {
-            perm.* = rand.next();
-        }
-
-        z.color = rand.next();
-
-        for (&z.en_passant) |*sq| {
-            sq.* = rand.next();
-        }
-
-        return z;
-    }
 };
