@@ -385,3 +385,51 @@ Eval4 kiwipete         14225    4.948s         347.885us ± 27.701us   (319.325u
 Eval6 kiwipete         5443     4.961s         911.618us ± 61.278us   (849.999us ... 2.136ms)      909.849us  1.099ms    1.232ms
 Eval8 kiwipete         807      4.4s           5.453ms ± 273.1us      (5.161ms ... 8.657ms)        5.406ms    6.542ms    6.654ms
 ```
+
+### v0.6.4
+- Upgrade to zig 0.15.1
+
+```
+benchmark              runs     total time     time/run (avg ± σ)    (min ... max)                p75        p99        p995
+-----------------------------------------------------------------------------------------------------------------------------
+Perft2 startpos        100000   1.353s         13.538us ± 6.728us    (11.993us ... 1.214ms)       13.584us   21.57us    24.33us
+Perft4 startpos        992      5.001s         5.041ms ± 619.783us   (4.715ms ... 10.538ms)       4.998ms    7.601ms    7.844ms
+Perft6 startpos        1        3.06s          3.06s ± 0ns           (3.06s ... 3.06s)            3.06s      3.06s      3.06s
+Perft2 kiwipete        93281    5.005s         53.665us ± 13.74us    (49.262us ... 1.321ms)       54.045us   82.184us   84.997us
+Perft4 kiwipete        48       4.997s         104.104ms ± 6.774ms   (98.701ms ... 126.766ms)     106.449ms  126.766ms  126.766ms
+Eval2 startpos         100000   2.779s         27.798us ± 10.22us    (24.473us ... 1.15ms)        27.886us   43.426us   83.969us
+Eval4 startpos         30822    5.002s         162.301us ± 28.875us  (147.08us ... 1.392ms)       163.741us  244.509us  258.296us
+Eval6 startpos         9724     4.962s         510.333us ± 68.352us  (462.984us ... 1.908ms)      513.854us  777.875us  817.687us
+Eval8 startpos         747      4.925s         6.593ms ± 699.854us   (6.056ms ... 10.01ms)        6.523ms    9.519ms    9.765ms
+Eval2 kiwipete         100000   2.776s         27.764us ± 10.769us   (24.227us ... 1.165ms)       27.789us   43.345us   82.568us
+Eval4 kiwipete         15846    4.988s         314.807us ± 48.741us  (279.33us ... 1.703ms)       318.919us  474.066us  496.898us
+Eval6 kiwipete         5925     4.95s          835.529us ± 111.702us (753.839us ... 2.363ms)      839.979us  1.269ms    1.338ms
+Eval8 kiwipete         841      4.429s         5.267ms ± 565.305us   (4.866ms ... 9.825ms)        5.251ms    7.742ms    7.908ms
+```
+
+### v0.6.5
+- Remove variables from board
+- Use precomputed zobrist values
+
+```
+benchmark              runs     total time     time/run (avg ± σ)    (min ... max)                p75        p99        p995
+-----------------------------------------------------------------------------------------------------------------------------
+Perft2 startpos        100000   1.202s         12.021us ± 5.321us    (10.738us ... 948.03us)      12.123us   18.932us   21.323us
+Perft4 startpos        1005     4.991s         4.966ms ± 595.496us   (4.637ms ... 9.164ms)        4.969ms    7.563ms    8.388ms
+Perft6 startpos        1        2.989s         2.989s ± 0ns          (2.989s ... 2.989s)          2.989s     2.989s     2.989s
+Perft2 kiwipete        97465    4.976s         51.061us ± 10.253us   (46.992us ... 1.001ms)       51.416us   78.408us   81.678us
+Perft4 kiwipete        49       4.973s         101.504ms ± 7.471ms   (96.733ms ... 125.211ms)     101.848ms  125.211ms  125.211ms
+Eval2 startpos         100000   2.759s         27.596us ± 10.353us   (23.78us ... 1.216ms)        27.799us   44.047us   86.728us
+Eval4 startpos         30771    4.992s         162.262us ± 28.037us  (145.832us ... 1.197ms)      163.94us   247.223us  264.076us
+Eval6 startpos         9761     4.979s         510.112us ± 70.849us  (458.187us ... 1.667ms)      514.06us   774.542us  831.567us
+Eval8 startpos         748      4.946s         6.612ms ± 786.274us   (6.036ms ... 11.127ms)       6.576ms    9.825ms    10.632ms
+Eval2 kiwipete         100000   2.733s         27.331us ± 11.605us   (23.368us ... 1.073ms)       27.558us   42.744us   86.541us
+Eval4 kiwipete         16185    5.166s         319.217us ± 61.4us    (271.244us ... 1.399ms)      322.523us  523.746us  667.974us
+Eval6 kiwipete         5767     4.838s         839.067us ± 110.443us (750.695us ... 2.632ms)      844.987us  1.275ms    1.362ms
+Eval8 kiwipete         862      4.448s         5.16ms ± 583.575us    (4.711ms ... 8.984ms)        5.136ms    7.443ms    7.486ms
+```
+
+```
+v0.6.4 vs v0.6.1 - 100 games 10/10
+Elo difference: 24.4 +/- 49.9, LOS: 83.2 %, DrawRatio: 47.0 %
+```
