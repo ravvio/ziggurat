@@ -244,9 +244,9 @@ test "from algebraic" {
 test "format square" {
     var buf: [2:0]u8 = undefined;
 
-    _ = try std.fmt.bufPrint(&buf, "{any}", .{Square.A1});
+    _ = try std.fmt.bufPrint(&buf, "{f}", .{Square.A1});
     try std.testing.expectEqualStrings("a1", &buf);
 
-    _ = try std.fmt.bufPrint(&buf, "{any}", .{Square.G8});
+    _ = try std.fmt.bufPrint(&buf, "{f}", .{Square.G8});
     try std.testing.expectEqualStrings("g8", &buf);
 }

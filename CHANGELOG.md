@@ -430,6 +430,6 @@ Eval8 kiwipete         862      4.448s         5.16ms ± 583.575us    (4.711ms .
 ```
 
 ```
-v0.6.4 vs v0.6.1 - 100 games 10/10
+v0.6.5 vs v0.6.1 - 100 games 10/10
 Elo difference: 24.4 +/- 49.9, LOS: 83.2 %, DrawRatio: 47.0 %
 ```
