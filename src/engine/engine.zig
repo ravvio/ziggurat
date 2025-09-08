@@ -504,12 +504,12 @@ pub const Engine = struct {
 
                 // If the eval surpasses alpha we have a new cutoff
                 if (best_score > alpha) {
+                    alpha = best_score;
                     // If alpha surpasses beta we do not need to search
                     // other moves.
-                    if (best_score >= beta) {
-                        return beta;
+                    if (alpha >= beta) {
+                        break;
                     }
-                    alpha = best_score;
                 }
             }
         }
