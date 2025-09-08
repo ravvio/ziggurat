@@ -3,7 +3,6 @@ pub const transposition = @import("./engine/transposition.zig");
 
 const engine = @import("./engine/engine.zig");
 pub const Engine = engine.Engine;
-pub const initLmr = engine.initLmr;
 
 pub const ziggurat = @import("root.zig");
 

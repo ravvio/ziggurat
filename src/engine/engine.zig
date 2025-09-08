@@ -16,16 +16,18 @@ const max_extension: u8 = 4;
 
 const null_reduction: u8 = 3;
 
-var lmr: [64][64]u8 = std.mem.zeroes([64][64]u8);
-
-pub fn initLmr() void {
+// Capture & Promotions / Quiet
+const lmr_depths: [2][64][64]u8 = blk: {
+    @setEvalBranchQuota(20_000);
+    var lmr = std.mem.zeroes([2][64][64]u8);
     for (0..64) |depth| {
         for (0..64) |move_number| {
             if (depth < 3 or move_number < 2) {
-                lmr[depth][move_number] = 0;
+                lmr[0][depth][move_number] = 0;
+                lmr[1][depth][move_number] = 0;
                 continue;
             }
-            const a = 0.3 * std.math.log(
+            const q = 0.5 + 0.3 * std.math.log(
                 f64,
                 std.math.e,
                 @as(f64, @floatFromInt(depth)),
@@ -34,10 +36,22 @@ pub fn initLmr() void {
                 std.math.e,
                 @as(f64, @floatFromInt(move_number)),
             );
-            lmr[depth][move_number] = @intFromFloat(a);
+            lmr[0][depth][move_number] = @intFromFloat(q);
+
+            const a = 0.2 + 0.4 * std.math.log(
+                f64,
+                std.math.e,
+                @as(f64, @floatFromInt(depth)),
+            ) * std.math.log(
+                f64,
+                std.math.e,
+                @as(f64, @floatFromInt(move_number)),
+            );
+            lmr[1][depth][move_number] = @intFromFloat(a);
         }
     }
-}
+    break :blk lmr;
+};
 
 /// The Engine is the component responsible for finding the best move
 pub const Engine = struct {
@@ -376,8 +390,6 @@ pub const Engine = struct {
 
         // Iterate all moves
         while (movelist.pick()) |move| {
-            // Check if the move is killer
-            // var is_killer_move = move.onlyMove() == self.killer_moves[self.ply][0] or move.onlyMove() == self.killer_moves[self.ply][1];
 
             // Make the move
             board.makeMove(move, color);
@@ -426,13 +438,19 @@ pub const Engine = struct {
 
                     // Start with a term based on the product of the
                     // logs of the depth and movesfound
-                    var reduction = lmr[depth][@min(movesfound, 63)];
+                    const quiet = move.is_capture() or move.is_promotion();
+                    var reduction = lmr_depths[@intFromBool(quiet)][depth][@min(movesfound, 63)];
+
+                    // Check if the move is killer
+                    // const is_killer_move =
+                    //     (move.withoutSortScore().x == self.killer_moves[self.ply][0].x) //
+                    //     or (move.withoutSortScore().x == self.killer_moves[self.ply][1].x);
 
                     // Reduce by 1 if best move was a capture and this one
-                    // is not
-                    if (best_move.capture() != 0 and move.capture() == 0) {
-                        reduction += 1;
-                    }
+                    // is not - not for killers
+                    // if (best_move.is_capture() and !move.is_capture() and !is_killer_move) {
+                    //     reduction += 1;
+                    // }
 
                     // Finalize reduction making sure we are not going under
                     reduction = @min(reduction, depth - 1);

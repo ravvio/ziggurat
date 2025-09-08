@@ -80,7 +80,7 @@ pub const Uci = struct {
             // Ask for idetification
             else if (std.mem.eql(u8, cmd.?, "uci")) {
                 _ = try stdout.interface.write(
-                    \\id name ziggurat_0.7.0
+                    \\id name ziggurat_0.7.1
                     \\id author Alessio Raviola <alessio.raviola.98@gmail.com>
                     \\
                 );
