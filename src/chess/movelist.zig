@@ -1,14 +1,17 @@
 const std = @import("std");
 const assert = std.debug.assert;
-const common = @import("constants.zig");
+const constants = @import("constants.zig");
+const pieces = constants.pieces;
 const ChessMove = @import("./chessmove.zig").ChessMove;
 
+const max_score: u8 = 255;
+const killer_score_1: u8 = 250;
+const killer_score_2: u8 = 245;
+const promotion_score: u8 = 100;
 // Most Valuable Victim - Least Valuable Aggressor
 // Table and helper values for generating move scores based on the
 // value of a given caputure
 // More: https://www.chessprogramming.org/MVV-LVA
-const max_score: u8 = 255;
-const mvv_lva_offset: u8 = 100;
 const mvv_lva: [7][7]u8 = .{
     .{ 0, 0, 0, 0, 0, 0, 0 }, // victim K, attacker K, Q, R, B, N, P, None
     .{ 50, 51, 52, 53, 54, 55, 0 }, // victim Q, attacker K, Q, R, B, N, P, None
@@ -20,7 +23,7 @@ const mvv_lva: [7][7]u8 = .{
 };
 
 pub const Movelist = struct {
-    list: [common.MAX_PSEUDO_MOVES]ChessMove,
+    list: [constants.MAX_PSEUDO_MOVES]ChessMove,
     count: usize,
 
     pub fn new() Movelist {
@@ -39,7 +42,7 @@ pub const Movelist = struct {
     }
 
     pub fn add(self: *Movelist, item: ChessMove) void {
-        assert(self.count < common.MAX_PSEUDO_MOVES);
+        assert(self.count < constants.MAX_PSEUDO_MOVES);
         self.list[self.count] = item;
         self.count += 1;
     }
@@ -54,12 +57,36 @@ pub const Movelist = struct {
         var i: usize = 0;
         while (i < self.count) : (i += 1) {
             var move = &self.list[i];
-            // Order hash move first
+
+            // Order hash move first, then killers, then captures finally quiets
             if (@as(u32, @truncate(move.*.x)) == hashmove) {
-                // std.debug.print("setting max {}\n", .{move});
                 move.setSortScore(max_score);
             } else {
-                const score = mvv_lva[move.capture()][move.piece()];
+                var score = mvv_lva[move.capture()][move.piece()];
+                if (move.is_promotion()) {
+                    score += promotion_score;
+                }
+                move.setSortScore(score);
+            }
+        }
+    }
+
+    pub fn scoreMovesWithKillers(self: *Movelist, hashmove: u32, killer1: ChessMove, killer2: ChessMove) void {
+        var i: usize = 0;
+        while (i < self.count) : (i += 1) {
+            var move = &self.list[i];
+            // Order hash move first, then killers, then captures finally quiets
+            if (@as(u32, @truncate(move.*.x)) == hashmove) {
+                move.setSortScore(max_score);
+            } else if (move.*.x == killer1.x) {
+                move.setSortScore(killer_score_1);
+            } else if (move.*.x == killer2.x) {
+                move.setSortScore(killer_score_2);
+            } else {
+                var score = mvv_lva[move.capture()][move.piece()];
+                if (move.is_promotion()) {
+                    score += promotion_score;
+                }
                 move.setSortScore(score);
             }
         }

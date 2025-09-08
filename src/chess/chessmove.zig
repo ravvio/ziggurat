@@ -67,8 +67,16 @@ pub const ChessMove = struct {
         return (m.x >> shift.CAPTURE) & bits.THREE;
     }
 
+    pub fn is_capture(m: ChessMove) bool {
+        return ((m.x >> shift.CAPTURE) & bits.THREE) != pieces.NONE;
+    }
+
     pub fn promotion(m: ChessMove) usize {
         return (m.x >> shift.PROMOTION) & bits.THREE;
+    }
+
+    pub fn is_promotion(m: ChessMove) bool {
+        return ((m.x >> shift.PROMOTION) & bits.THREE) != pieces.NONE;
     }
 
     pub fn enPassant(m: ChessMove) bool {
@@ -96,11 +104,7 @@ pub const ChessMove = struct {
         std.debug.assert(m.getSortScore() == 0);
     }
 
-    pub fn withoutSortScore(m: *const ChessMove) usize {
-        return m.x & bits.no_sort_mask;
-    }
-
-    pub fn onlyMove(m: ChessMove) usize {
-        return m.x & bits.MOVEMASK;
+    pub fn withoutSortScore(m: *const ChessMove) ChessMove {
+        return ChessMove{ .x = m.x & bits.no_sort_mask };
     }
 };

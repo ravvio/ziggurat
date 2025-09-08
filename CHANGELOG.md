@@ -440,22 +440,30 @@ Elo difference: 24.4 +/- 49.9, LOS: 83.2 %, DrawRatio: 47.0 %
 ```
 benchmark              runs     total time     time/run (avg ± σ)    (min ... max)                p75        p99        p995
 -----------------------------------------------------------------------------------------------------------------------------
-Perft2 startpos        100000   1.184s         11.845us ± 3.539us    (10.4us ... 356.182us)       11.794us   21.087us   25.482us
-Perft4 startpos        1001     5.121s         5.116ms ± 400.591us   (4.636ms ... 8.404ms)        5.31ms     6.341ms    6.857ms
-Perft6 startpos        1        3.374s         3.374s ± 0ns          (3.374s ... 3.374s)          3.374s     3.374s     3.374s
-Perft2 kiwipete        94341    5.055s         53.583us ± 17.866us   (45.717us ... 968.499us)     55.589us   93.695us   181.182us
-Perft4 kiwipete        44       4.774s         108.513ms ± 3.509ms   (103.496ms ... 119.232ms)    109.383ms  119.232ms  119.232ms
-Eval2 startpos         100000   1.837s         18.371us ± 15.461us   (15.152us ... 894.027us)     17.772us   31.76us    76.59us
-Eval4 startpos         100000   2.548s         25.489us ± 15.834us   (21.117us ... 1.365ms)       25.098us   41.244us   119.692us
-Eval6 startpos         97807    4.951s         50.621us ± 14.577us   (42.705us ... 989.616us)     50.211us   97.722us   144.568us
-Eval8 startpos         2545     4.963s         1.95ms ± 135.265us    (1.753ms ... 4.214ms)        1.961ms    2.523ms    2.593ms
-Eval2 kiwipete         100000   1.786s         17.864us ± 14.63us    (14.917us ... 1.238ms)       17.22us    29.816us   35.095us
-Eval4 kiwipete         100000   4.249s         42.494us ± 14.449us   (35.099us ... 969.074us)     42.103us   73.08us    139.404us
-Eval6 kiwipete         79232    4.977s         62.825us ± 16.163us   (55.181us ... 996.229us)     62.222us   114.214us  157.735us
-Eval8 kiwipete         4754     4.717s         992.227us ± 96.32us   (911.024us ... 2.094ms)      989.839us  1.451ms    1.556ms
+Perft2 startpos        100000   1.153s         11.538us ± 5.741us    (10.167us ... 904.286us)     11.603us   22.235us   26.497us
+Perft4 startpos        1048     5s             4.771ms ± 400.86us    (4.414ms ... 9.916ms)        4.881ms    5.89ms     6.07ms
+Perft6 startpos        1        2.934s         2.934s ± 0ns          (2.934s ... 2.934s)          2.934s     2.934s     2.934s
+Perft2 kiwipete        100000   4.901s         49.016us ± 11.87us    (44.676us ... 982.054us)     49.284us   63.321us   70.43us
+Perft4 kiwipete        51       4.98s          97.658ms ± 1.782ms    (95.524ms ... 103.801ms)     98.098ms   103.801ms  103.801ms
+Eval6 startpos         96581    5.042s         52.212us ± 14.826us   (43.874us ... 1.078ms)       52.127us   97.295us   153.192us
+Eval8 startpos         2653     5.036s         1.898ms ± 199.868us   (1.69ms ... 3.874ms)         1.951ms    2.67ms     2.791ms
+Eval10 startpos        115      4.949s         43.036ms ± 3.927ms    (36.695ms ... 55.615ms)      46.363ms   51.206ms   55.615ms
+Eval12 startpos        5        2.284s         456.986ms ± 12.86ms   (441.471ms ... 475.113ms)    463.831ms  475.113ms  475.113ms
+Eval6 kiwipete         72988    5.213s         71.433us ± 21.862us   (56.961us ... 1.011ms)       72.768us   155.18us   198.504us
+Eval8 kiwipete         4271     4.622s         1.082ms ± 96.368us    (939.964us ... 2.125ms)      1.106ms    1.42ms     1.535ms
+Eval10 startpos        198      3.341s         16.875ms ± 780.079us  (15.263ms ... 20.486ms)      17.089ms   20.18ms    20.486ms
+Eval12 startpos        1        2.288s         2.288s ± 0ns          (2.288s ... 2.288s)          2.288s     2.288s     2.288s
 ```
 
 ```
 v0.6.6 vs v0.6.5 - 100 games 10/10
 Elo difference: 74.1 +/- 50.0, LOS: 99.8 %, DrawRatio: 47.0 %
+```
+
+### v0.7.0
+- Killer Heuristic
+
+```
+v0.7.0 vs v0.6.6 - 100 games 10/10
+Elo difference: 42.6 +/- 48.5, LOS: 95.7 %, DrawRatio: 58.5 %
 ```

@@ -71,6 +71,8 @@ pub const Engine = struct {
     principal_variation: [max_ply][max_ply]chess.ChessMove = std.mem.zeroes([max_ply][max_ply]chess.ChessMove),
     /// Length of the pricipal variation
     principal_variation_size: [max_ply]usize = std.mem.zeroes([max_ply]usize),
+    /// Killer moves
+    killer_moves: [max_ply][2]chess.ChessMove = std.mem.zeroes([max_ply][2]chess.ChessMove),
     /// The current eval of the engine
     score: types.Score = 0,
 
@@ -88,6 +90,7 @@ pub const Engine = struct {
         self.hash_history.clearAndFree();
         self.nodes = 0;
         self.best_move = chess.ChessMove{};
+        self.killer_moves = std.mem.zeroes([max_ply][2]chess.ChessMove);
         for (&self.principal_variation_size) |*size| {
             size.* = 0;
         }
@@ -187,7 +190,7 @@ pub const Engine = struct {
                     _ = stdout.interface.write("pv") catch unreachable;
                     var i: usize = 0;
                     while (i < self.principal_variation_size[0]) : (i += 1) {
-                        stdout.interface.print("{f} ", .{self.principal_variation[0][i]}) catch unreachable;
+                        stdout.interface.print(" {f}", .{self.principal_variation[0][i]}) catch unreachable;
                     }
                 }
 
@@ -362,13 +365,20 @@ pub const Engine = struct {
         var movelist = chess.Movelist.new();
         board.generatePseudolegalMoves(chess.constants.MoveType.All, color, &movelist);
 
+        // - Initialize kille move
+        self.killer_moves[self.ply + 1][0] = chess.ChessMove{};
+        self.killer_moves[self.ply + 1][1] = chess.ChessMove{};
+
         // - Score moves
-        movelist.scoreMoves(hashmove);
+        movelist.scoreMovesWithKillers(hashmove, self.killer_moves[self.ply][0], self.killer_moves[self.ply][1]);
 
         var movesfound: usize = 0;
 
         // Iterate all moves
         while (movelist.pick()) |move| {
+            // Check if the move is killer
+            // var is_killer_move = move.onlyMove() == self.killer_moves[self.ply][0] or move.onlyMove() == self.killer_moves[self.ply][1];
+
             // Make the move
             board.makeMove(move, color);
 
@@ -379,7 +389,7 @@ pub const Engine = struct {
             }
 
             // Assert that the first move is the hashmove if we found one
-            std.debug.assert(hashmove == 0 or movesfound > 0 or move.withoutSortScore() == hashmove);
+            std.debug.assert(hashmove == 0 or movesfound > 0 or move.withoutSortScore().x == hashmove);
 
             // Increment ply, add to history, increase moves found
             self.ply += 1;
@@ -409,7 +419,6 @@ pub const Engine = struct {
                     extension,
                 );
             } else {
-
                 var do_full_depth = true;
                 if (depth > 2) {
                     // - LMR
@@ -522,6 +531,19 @@ pub const Engine = struct {
                 return best_score;
             } else {
                 return 0;
+            }
+        }
+
+        // Set killer for quiet moves
+        if (alpha >= beta and !best_move.is_capture() and !best_move.is_promotion()) {
+            const best = best_move.withoutSortScore();
+            const tmp = self.killer_moves[self.ply][0];
+            // Set best as first killer and swap if necessary
+            if (tmp.x == 0) {
+                self.killer_moves[self.ply][0] = best;
+            } else if (tmp.x != best.x) {
+                self.killer_moves[self.ply][0] = best;
+                self.killer_moves[self.ply][1] = tmp;
             }
         }
 

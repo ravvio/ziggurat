@@ -52,16 +52,6 @@ pub fn main() !void {
     );
 
     try bench.addParam(
-        "Eval2 startpos",
-        &eval.EvalBench.init(chess.constants.Fen.STARTPOS, 2),
-        .{},
-    );
-    try bench.addParam(
-        "Eval4 startpos",
-        &eval.EvalBench.init(chess.constants.Fen.STARTPOS, 4),
-        .{},
-    );
-    try bench.addParam(
         "Eval6 startpos",
         &eval.EvalBench.init(chess.constants.Fen.STARTPOS, 6),
         .{},
@@ -72,13 +62,13 @@ pub fn main() !void {
         .{},
     );
     try bench.addParam(
-        "Eval2 kiwipete",
-        &eval.EvalBench.init(chess.constants.Fen.STARTPOS, 2),
+        "Eval10 startpos",
+        &eval.EvalBench.init(chess.constants.Fen.STARTPOS, 10),
         .{},
     );
     try bench.addParam(
-        "Eval4 kiwipete",
-        &eval.EvalBench.init(chess.constants.Fen.KIWIPETE, 4),
+        "Eval12 startpos",
+        &eval.EvalBench.init(chess.constants.Fen.STARTPOS, 12),
         .{},
     );
     try bench.addParam(
@@ -89,6 +79,16 @@ pub fn main() !void {
     try bench.addParam(
         "Eval8 kiwipete",
         &eval.EvalBench.init(chess.constants.Fen.KIWIPETE, 8),
+        .{},
+    );
+    try bench.addParam(
+        "Eval10 startpos",
+        &eval.EvalBench.init(chess.constants.Fen.KIWIPETE, 10),
+        .{},
+    );
+    try bench.addParam(
+        "Eval12 startpos",
+        &eval.EvalBench.init(chess.constants.Fen.KIWIPETE, 12),
         .{},
     );
 
