@@ -14,7 +14,7 @@ const max_game_ply = 1024;
 const max_ply: u8 = 128;
 const max_extension: u8 = 4;
 
-const null_reduction: u8 = 3;
+const null_reduction: u8 = 4;
 
 // Capture & Promotions / Quiet
 const lmr_depths: [2][64][64]u8 = blk: {
@@ -440,17 +440,6 @@ pub const Engine = struct {
                     // logs of the depth and movesfound
                     const quiet = move.is_capture() or move.is_promotion();
                     var reduction = lmr_depths[@intFromBool(quiet)][depth][@min(movesfound, 63)];
-
-                    // Check if the move is killer
-                    // const is_killer_move =
-                    //     (move.withoutSortScore().x == self.killer_moves[self.ply][0].x) //
-                    //     or (move.withoutSortScore().x == self.killer_moves[self.ply][1].x);
-
-                    // Reduce by 1 if best move was a capture and this one
-                    // is not - not for killers
-                    // if (best_move.is_capture() and !move.is_capture() and !is_killer_move) {
-                    //     reduction += 1;
-                    // }
 
                     // Finalize reduction making sure we are not going under
                     reduction = @min(reduction, depth - 1);
