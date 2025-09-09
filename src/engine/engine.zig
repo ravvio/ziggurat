@@ -12,7 +12,7 @@ const NodeType = enum {
 
 const max_game_ply = 1024;
 const max_ply: u8 = 128;
-const max_extension: u8 = 4;
+const max_extension: u8 = 24;
 
 const null_reduction: u8 = 4;
 
