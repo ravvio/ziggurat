@@ -545,6 +545,7 @@ Elo difference: 14.9 +/- 15.4, LOS: 97.1 %, DrawRatio: 48.9 %
 
 ### v0.7.3
 - Increase extension limit to 24
+- Improve move generation
 
 ```
 benchmark              runs     total time     time/run (avg ± σ)    (min ... max)                p75        p99        p995

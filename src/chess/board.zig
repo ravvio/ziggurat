@@ -712,10 +712,11 @@ fn addToMovelist(
     movelist: *Movelist,
     board: *const Board,
     from: usize,
-    to: u64,
+    _to: u64,
 ) void {
-    var biter = bb.BitboardIterator{ .u = to };
-    while (biter.next()) |sq| {
+    var to = _to;
+    while (to != 0) {
+        const sq = bb.pop(&to);
         const capture = board.pieces[sq];
 
         var move_data = piece | (from << ChessMove.shift.FROM) | (sq << ChessMove.shift.TO) | (capture << ChessMove.shift.CAPTURE);
@@ -724,8 +725,8 @@ fn addToMovelist(
         var promotion: bool = false;
         if (piece == pieces.PAWN) {
             promotion = switch (color) {
-                true => bb.SQUARES[sq] & bb.RANK_8 != bb.EMPTY,
-                false => bb.SQUARES[sq] & bb.RANK_1 != bb.EMPTY,
+                constants.Colors.white => bb.SQUARES[sq] & bb.RANK_8 != bb.EMPTY,
+                constants.Colors.black => bb.SQUARES[sq] & bb.RANK_1 != bb.EMPTY,
             };
 
             var en_passant = false;
@@ -736,6 +737,16 @@ fn addToMovelist(
             const double_push = @abs(@as(i128, sq) - from) == 16;
 
             move_data |= (@as(u64, @intFromBool(en_passant)) << ChessMove.shift.ENPASSANT) | (@as(u64, @intFromBool(double_push)) << ChessMove.shift.DOUBLE_STEP);
+
+            if (promotion) {
+                for (pieces.PROMOTION_PIECES) |p| {
+                    movelist.add(ChessMove{ .x = move_data | (p << ChessMove.shift.PROMOTION) });
+                }
+            } else {
+                move_data |= pieces.NONE << ChessMove.shift.PROMOTION;
+                movelist.add(ChessMove{ .x = move_data });
+            }
+            continue;
         }
 
         // King stuff
@@ -744,14 +755,8 @@ fn addToMovelist(
             move_data |= @as(usize, @intFromBool(castling)) << ChessMove.shift.CASTLING;
         }
 
-        if (!promotion) {
-            move_data |= pieces.NONE << ChessMove.shift.PROMOTION;
-            movelist.add(ChessMove{ .x = move_data });
-        } else {
-            for (pieces.PROMOTION_PIECES) |p| {
-                movelist.add(ChessMove{ .x = move_data | (p << ChessMove.shift.PROMOTION) });
-            }
-        }
+        move_data |= pieces.NONE << ChessMove.shift.PROMOTION;
+        movelist.add(ChessMove{ .x = move_data });
     }
 }
 

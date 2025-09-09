@@ -47,7 +47,7 @@ pub const ChessMove = struct {
         try writer.print("{f}{f}{s}", .{
             Square.new(this.from()),
             Square.new(this.to()),
-            if (this.promotion() == pieces.NONE) "" else pieces.toString(this.promotion()),
+            if (this.is_promotion()) pieces.toString(this.promotion()) else "",
         });
     }
 
