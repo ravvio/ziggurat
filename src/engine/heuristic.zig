@@ -17,6 +17,31 @@ pub fn scoreAsMate(score: types.Score) ?i64 {
     * @as(i64, if (score > 0) 1 else -1);
 }
 
+const mobility_piece_factors: [6]f64 = [6]f64{
+    -0.2, // King
+    1.0, // Queen
+    1.0, // Rook
+    1.2, // Bishop
+    1.1, // Knight
+    0.2, // Pawn
+};
+
+const mobility_scores: [6][27]types.Score = blk: {
+    @setEvalBranchQuota(1_000);
+    var res = std.mem.zeroes([6][27]types.Score);
+    for (0..27) |i| {
+        const log = 0.8 * std.math.log(
+            f64,
+            std.math.e,
+            @as(f64, @floatFromInt(1 + i)),
+        );
+        for (0..6) |p| {
+            res[p][i] = @intFromFloat(log * mobility_piece_factors[p]);
+        }
+    }
+    break :blk res;
+};
+
 const gamephase_increments: [6]types.Score = .{ 0, 4, 2, 1, 1, 0 };
 
 pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
@@ -31,6 +56,8 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
 
     const occupied = board.colors[0] | board.colors[1];
 
+    var mobility_score: types.Score = 0;
+
     inline for (0..6) |piece| {
         // Black
         pieces_bb = board.bitboard(Colors.black, piece);
@@ -38,7 +65,10 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
             const sq = chess.bitboard.pop(&pieces_bb);
             res -= tables.piece_value[Colors.ublack][piece][sq];
             gamephase += gamephase_increments[piece];
-            black_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, occupied);
+
+            const attacks = chess.tables.pieceAttacks(color, piece, sq, occupied);
+            mobility_score -= mobility_scores[piece][@popCount(attacks)];
+            black_targets[piece] |= attacks;
         }
         // White
         pieces_bb = board.bitboard(Colors.white, piece);
@@ -46,7 +76,10 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
             const sq = chess.bitboard.pop(&pieces_bb);
             res += tables.piece_value[Colors.uwhite][piece][sq];
             gamephase += gamephase_increments[piece];
-            white_targets[piece] |= chess.tables.pieceAttacks(color, piece, sq, occupied);
+
+            const attacks = chess.tables.pieceAttacks(color, piece, sq, occupied);
+            mobility_score -= mobility_scores[piece][@popCount(attacks)];
+            white_targets[piece] |= attacks;
         }
     }
 
@@ -57,6 +90,7 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
     var final = @divTrunc((middlegame_phase * mg) + (endgame_phase * eg), 24);
 
     final += computeKingSafety(board, &white_targets, &black_targets);
+    final += mobility_score;
     return sign * final;
 }
 

@@ -174,15 +174,15 @@ pub const Engine = struct {
 
                 if (self.stop) {
                     break :deepening;
-                } else {
-                    self.score = score;
-                    self.prev_best_move = self.best_move;
                 }
 
                 // TODO: here change alpha and beta when we do
                 // stuff like aspiration windows
                 break;
             }
+
+            self.score = score;
+            self.prev_best_move = self.best_move;
 
             // Print info about the search
             if (!self.quiet) {
@@ -739,7 +739,7 @@ pub const Engine = struct {
     /// Check if the position is a draw
     fn isDraw(self: *Engine, board: *chess.Board) bool {
         // Check for 50 moves
-        if (board.state.halfmove_clock >= 50) {
+        if (board.state.halfmove_clock >= 100) {
             return true;
         }
 
@@ -751,15 +751,12 @@ pub const Engine = struct {
         if (self.hash_history.items.len >= 6) {
             var rep: bool = false;
             // Start from the top, is easier that we will find a repetition there
-            var i: usize = self.hash_history.items.len - 3;
+            var index: usize = self.hash_history.items.len - 3;
             // We need only to check until the last pawn move
-            var limit: usize = 3;
-            if (i > board.state.halfmove_clock + 1) {
-                limit = @max(i - board.state.halfmove_clock - 1, 3);
-            }
+            const limit: usize = @max(index - board.state.halfmove_clock - 1, 3);
             // Count down by 2 given that the position must be of the right color
-            while (i >= limit) : (i -= 2) {
-                if (self.hash_history.items[i] == board.state.zobrist_key) {
+            while (index >= limit) : (index -= 2) {
+                if (self.hash_history.items[index] == board.state.zobrist_key) {
                     if (!rep) {
                         rep = true;
                         continue;
