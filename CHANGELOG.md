@@ -569,3 +569,29 @@ Eval12 startpos        122      2.163s         17.733ms ± 654.677us  (17.237ms 
 v0.7.3 vs v0.7.2 - 1000 games 40/1
 Elo difference: 2.1 +/- 15.6, LOS: 60.3 %, DrawRatio: 47.6 %
 ```
+
+### v0.7.4
+- Add mobility evaluation
+
+```
+benchmark              runs     total time     time/run (avg ± σ)    (min ... max)                p75        p99        p995
+-----------------------------------------------------------------------------------------------------------------------------
+Perft2 startpos        100000   1.099s         10.994us ± 1.326us    (9.97us ... 132.433us)       11.026us   12.851us   14.773us
+Perft4 startpos        1104     4.973s         4.505ms ± 132.234us   (4.255ms ... 7.295ms)        4.511ms    4.782ms    5.002ms
+Perft6 startpos        1        2.733s         2.733s ± 0ns          (2.733s ... 2.733s)          2.733s     2.733s     2.733s
+Perft2 kiwipete        100000   4.703s         47.03us ± 8.007us     (43.258us ... 963.727us)     47.445us   51.037us   52.509us
+Perft4 kiwipete        53       4.921s         92.867ms ± 754.079us  (92.374ms ... 95.481ms)      92.771ms   95.481ms   95.481ms
+Eval6 startpos         100000   3.726s         37.267us ± 9.672us    (31.17us ... 939.786us)      36.95us    48.884us   90.865us
+Eval8 startpos         59501    4.922s         82.73us ± 11.727us    (75.571us ... 1.019ms)       82.867us   109.114us  126.674us
+Eval10 startpos        2594     4.958s         1.911ms ± 59.634us    (1.839ms ... 3.702ms)        1.909ms    2.054ms    2.171ms
+Eval12 startpos        238      4.786s         20.112ms ± 1.107ms    (19.681ms ... 27.41ms)       19.816ms   25.824ms   26.799ms
+Eval6 kiwipete         70560    5.049s         71.561us ± 9.898us    (63.48us ... 969.42us)       72.182us   100.766us  123.029us
+Eval8 kiwipete         27818    4.891s         175.856us ± 14.038us  (165.493us ... 1.067ms)      177.451us  200.705us  205.672us
+Eval10 startpos        2160     4.666s         2.16ms ± 55.19us      (2.085ms ... 3.123ms)        2.164ms    2.252ms    2.274ms
+Eval12 startpos        96       1.778s         18.523ms ± 503.847us  (18.117ms ... 20.888ms)      18.463ms   20.888ms   20.888ms
+```
+
+```
+v0.7.4 vs v0.7.3 - 1000 games 40/1
+Elo difference: 7.3 +/- 15.1, LOS: 82.8 %, DrawRatio: 50.7 %
+```

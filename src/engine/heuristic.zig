@@ -17,6 +17,31 @@ pub fn scoreAsMate(score: types.Score) ?i64 {
     * @as(i64, if (score > 0) 1 else -1);
 }
 
+const mobility_piece_factors: [6]f64 = [6]f64{
+    -0.2, // King
+    1.0, // Queen
+    1.0, // Rook
+    1.2, // Bishop
+    1.1, // Knight
+    0.2, // Pawn
+};
+
+const mobility_scores: [6][21]types.Score = blk: {
+    @setEvalBranchQuota(1_000);
+    var res = std.mem.zeroes([6][21]types.Score);
+    for (0..21) |i| {
+        const log = 0.3 * std.math.log(
+            f64,
+            std.math.e,
+            @as(f64, @floatFromInt(1 + i)),
+        );
+        for (0..6) |p| {
+            res[p][i] = @intFromFloat(log * mobility_piece_factors[p]);
+        }
+    }
+    break :blk res;
+};
+
 const gamephase_increments: [6]types.Score = .{ 0, 4, 2, 1, 1, 0 };
 
 pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
@@ -55,6 +80,11 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
 
     const mg, const eg = res;
     var final = @divTrunc((middlegame_phase * mg) + (endgame_phase * eg), 24);
+
+    // Mobility
+    for (0..6) |p| {
+        final += mobility_scores[p][@popCount(white_targets[p])] - mobility_scores[p][@popCount(black_targets[p])];
+    }
 
     final += computeKingSafety(board, &white_targets, &black_targets);
     return sign * final;
