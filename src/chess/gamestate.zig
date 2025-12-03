@@ -46,6 +46,7 @@ pub const CastlingRights = struct {
 pub const GameState = struct {
     next_move: ChessMove = ChessMove{ .x = 0 },
     zobrist_key: u64 = 0,
+    pawn_structure_key: u64 = 0,
 
     current_side: constants.Color = constants.Colors.white,
 

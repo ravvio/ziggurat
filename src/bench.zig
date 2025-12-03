@@ -23,7 +23,9 @@ pub fn main() !void {
     defer arena.deinit();
     const allocator = arena.allocator();
     try engine.transposition.initGlobalTranspositionTable(allocator, 64);
+    try engine.pawn_hashtable.initGlobalPawnTable(allocator, 4);
     defer engine.transposition.global_tt.deinit();
+    defer engine.pawn_hashtable.global_pt.deinit();
 
     try bench.addParam(
         "Perft2 startpos",

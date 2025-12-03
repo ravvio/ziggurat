@@ -4,6 +4,7 @@ const constants = chess.constants;
 const Colors = constants.Colors;
 const types = @import("types.zig");
 const tables = @import("heuristic_tables.zig");
+const pawn_hashtable = @import("pawn_hashtable.zig");
 
 pub const mate_score: types.Score = 100_000;
 pub const max_score: types.Score = 99_000;
@@ -26,10 +27,10 @@ const mobility_piece_factors: [6]f64 = [6]f64{
     0.2, // Pawn
 };
 
-const mobility_scores: [6][27]types.Score = blk: {
+const mobility_scores: [6][29]types.Score = blk: {
     @setEvalBranchQuota(1_000);
-    var res = std.mem.zeroes([6][27]types.Score);
-    for (0..27) |i| {
+    var res = std.mem.zeroes([6][29]types.Score);
+    for (0..29) |i| {
         const log = 0.8 * std.math.log(
             f64,
             std.math.e,
@@ -89,13 +90,9 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
     const mg, const eg = res;
     var final = @divTrunc((middlegame_phase * mg) + (endgame_phase * eg), 24);
 
-    // Mobility
-    for (0..6) |p| {
-        final += mobility_scores[p][@popCount(white_targets[p])] - mobility_scores[p][@popCount(black_targets[p])];
-    }
-
-    final += computeKingSafety(board, &white_targets, &black_targets);
     final += mobility_score;
+    final += computeKingSafety(board, &white_targets, &black_targets);
+    final += computePawnStructure(board);
     return sign * final;
 }
 
@@ -115,20 +112,12 @@ pub fn computeKingSafety(
     };
 
     // Knight and bishop
-    attack_counters += tables.vec_mul_2 * @popCount(
-        @Vector(2, u64){ black_targets[1], white_targets[1] } & zones
-    );
-    attack_counters += tables.vec_mul_3 * @popCount(
-        @Vector(2, u64){ black_targets[2], white_targets[2] } & zones
-    );
+    attack_counters += tables.vec_mul_2 * @popCount(@Vector(2, u64){ black_targets[1], white_targets[1] } & zones);
+    attack_counters += tables.vec_mul_3 * @popCount(@Vector(2, u64){ black_targets[2], white_targets[2] } & zones);
     // Rook
-    attack_counters += tables.vec_mul_4 * @popCount(
-        @Vector(2, u64){ black_targets[3], white_targets[3] } & zones
-    );
+    attack_counters += tables.vec_mul_4 * @popCount(@Vector(2, u64){ black_targets[3], white_targets[3] } & zones);
     // Queen
-    attack_counters += @popCount(
-        @Vector(2, u64){ black_targets[4], white_targets[4] } & zones
-    );
+    attack_counters += @popCount(@Vector(2, u64){ black_targets[4], white_targets[4] } & zones);
 
     var bc, var wc = attack_counters;
 
@@ -140,4 +129,50 @@ pub fn computeKingSafety(
     }
 
     return tables.safety[wc] - tables.safety[bc];
+}
+
+pub fn computePawnStructure(board: *const chess.Board) types.Score {
+    // Check hashtable
+    // if (pawn_hashtable.global_pt.probe(board.state.pawn_structure_key)) |s| {
+    //     return s.score;
+    // }
+
+    const black_pawns = board.pawns(Colors.black);
+    const white_pawns = board.pawns(Colors.white);
+
+    var score: types.Score = 0;
+    var passed_b: usize = 0;
+    var passed_w: usize = 0;
+
+    var black_pawns_it = black_pawns;
+    while (black_pawns_it != 0) {
+        const sq = chess.bitboard.pop(&black_pawns_it);
+
+        if (black_pawns & tables.double_pawn_masks[0][sq] == 0) {
+            score -= tables.double_pawn_value;
+            continue;
+        }
+        if (white_pawns & tables.passed_pawn_masks[0][sq] == 0 and black_pawns & tables.double_pawn_masks[1][sq] == 0) {
+            passed_b += 1;
+        }
+    }
+
+    var white_pawns_it = white_pawns;
+    while (white_pawns_it != 0) {
+        const sq = chess.bitboard.pop(&white_pawns_it);
+        if (white_pawns & tables.double_pawn_masks[1][sq] == 0) {
+            score += tables.double_pawn_value;
+            continue;
+        }
+        if (black_pawns & tables.passed_pawn_masks[1][sq] == 0 and white_pawns & tables.double_pawn_masks[0][sq] == 0) {
+            passed_w += 1;
+        }
+    }
+
+    score += tables.passed_pawn_values[passed_w] - tables.passed_pawn_values[passed_b];
+
+    // Store score
+    // pawn_hashtable.global_pt.put(board.state.pawn_structure_key, score);
+
+    return score;
 }

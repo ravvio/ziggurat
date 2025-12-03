@@ -3,6 +3,7 @@ const chess = @import("../chess.zig");
 const types = @import("types.zig");
 const heuristic = @import("heuristic.zig");
 const transposition = @import("transposition.zig");
+const pawn_hashtable = @import("pawn_hashtable.zig");
 
 const NodeType = enum {
     Root,
@@ -108,6 +109,8 @@ pub const Engine = struct {
         for (&self.principal_variation_size) |*size| {
             size.* = 0;
         }
+        transposition.global_tt.clear();
+        pawn_hashtable.global_pt.clear();
     }
 
     pub fn deinit(self: *Engine) void {
@@ -753,7 +756,10 @@ pub const Engine = struct {
             // Start from the top, is easier that we will find a repetition there
             var index: usize = self.hash_history.items.len - 3;
             // We need only to check until the last pawn move
-            const limit: usize = @max(index - board.state.halfmove_clock - 1, 3);
+            var limit: usize = 3;
+            if (index > board.state.halfmove_clock + 1) {
+                limit = @max(index - board.state.halfmove_clock - 1, 3);
+            }
             // Count down by 2 given that the position must be of the right color
             while (index >= limit) : (index -= 2) {
                 if (self.hash_history.items[index] == board.state.zobrist_key) {

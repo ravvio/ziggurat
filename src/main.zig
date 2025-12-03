@@ -116,7 +116,9 @@ pub fn main() !void {
 
     ziggurat.initAll();
     try engine.transposition.initGlobalTranspositionTable(allocator, 64);
+    try engine.pawn_hashtable.initGlobalPawnTable(allocator, 4);
     defer engine.transposition.global_tt.deinit();
+    defer engine.pawn_hashtable.global_pt.deinit();
 
     var args = try std.process.argsWithAllocator(allocator);
     _ = args.next();

@@ -1,5 +1,6 @@
 pub const Uci = @import("./engine/uci.zig").Uci;
 pub const transposition = @import("./engine/transposition.zig");
+pub const pawn_hashtable = @import("./engine/pawn_hashtable.zig");
 
 const engine = @import("./engine/engine.zig");
 pub const Engine = engine.Engine;
@@ -29,7 +30,7 @@ fn testMate(
     e.best_move.removeSortScore();
 
     std.testing.expectEqual(expected, e.best_move) catch |err| {
-        std.debug.print("expected: {any}, found: {any}\n", .{ expected, e.best_move });
+        std.debug.print("expected: {f}, found: {f}\n", .{ expected, e.best_move });
         return err;
     };
 }
@@ -39,8 +40,10 @@ test "mates in 1" {
     defer arena.deinit();
     const allocator = arena.allocator();
     try transposition.initGlobalTranspositionTable(allocator, 64);
+    try pawn_hashtable.initGlobalPawnTable(allocator, 4);
     ziggurat.initAll();
     defer transposition.global_tt.deinit();
+    defer pawn_hashtable.global_pt.deinit();
     try testMate("1rb5/4r3/3p1npb/3kp1P1/1P3P1P/5nR1/2Q1BK2/bN4NR w - - 3 61", "c2c4", 1);
     try testMate("rn1q2n1/b3k1pr/pp1pB1Qp/2p1p1P1/2P1PP2/5R1P/P2P4/RNB1K3 w - - 1 24", "g6f7", 1);
     try testMate("8/3r3k/NP1p4/p2QP1P1/1BB3Pp/1R4n1/6K1/5R2 w - - 5 82", "d5g8", 1);
@@ -52,7 +55,9 @@ test "mates in 2" {
     defer arena.deinit();
     const allocator = arena.allocator();
     try transposition.initGlobalTranspositionTable(allocator, 64);
+    try pawn_hashtable.initGlobalPawnTable(allocator, 4);
     defer transposition.global_tt.deinit();
+    defer pawn_hashtable.global_pt.deinit();
     ziggurat.initAll();
     try testMate("r2qk2r/pb4pp/1n2Pb2/2B2Q2/p1p5/2P5/2B2PPP/RN2R1K1 w - - 1 0", "f5g6", 2);
 }
@@ -62,7 +67,9 @@ test "mates in 3" {
     defer arena.deinit();
     const allocator = arena.allocator();
     try transposition.initGlobalTranspositionTable(allocator, 64);
+    try pawn_hashtable.initGlobalPawnTable(allocator, 4);
     defer transposition.global_tt.deinit();
+    defer pawn_hashtable.global_pt.deinit();
     ziggurat.initAll();
     try testMate("8/8/8/8/1p1N4/1Bk1K3/3N4/b7 w - - 1 0", "d4e6", 3);
     try testMate("5K1k/6R1/8/3b2P1/5p2/p6p/q7/8 w - - 1 0", "g5g6", 3);

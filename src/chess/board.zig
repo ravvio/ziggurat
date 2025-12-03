@@ -251,11 +251,19 @@ pub const Board = struct {
         while (iterator_b.next()) |sq| {
             const piece = b.pieces[sq];
             z ^= zobrist_values.pieces[0][piece][sq];
+
+            if (piece == pieces.PAWN) {
+                b.state.pawn_structure_key ^= zobrist_values.pieces[0][piece][sq];
+            }
         }
         var iterator_w = bb.BitboardIterator{ .u = b.colors[1] };
         while (iterator_w.next()) |sq| {
             const piece = b.pieces[sq];
             z ^= zobrist_values.pieces[1][piece][sq];
+
+            if (piece == pieces.PAWN) {
+                b.state.pawn_structure_key ^= zobrist_values.pieces[1][piece][sq];
+            }
         }
         // Castling
         z ^= zobrist_values.castling[b.state.castling.x];
@@ -438,6 +446,9 @@ pub const Board = struct {
         b.colors[@intFromBool(color)] ^= tmp;
         b.pieces[sq] = constants.pieces.NONE;
         b.state.zobrist_key ^= zobrist_values.pieces[@intFromBool(color)][piece][sq];
+        if (piece == pieces.PAWN) {
+            b.state.pawn_structure_key ^= zobrist_values.pieces[@intFromBool(color)][piece][sq];
+        }
     }
 
     pub fn addPiece(b: *Board, comptime color: bool, piece: usize, sq: usize) void {
@@ -446,6 +457,9 @@ pub const Board = struct {
         b.colors[@intFromBool(color)] |= tmp;
         b.pieces[sq] = piece;
         b.state.zobrist_key ^= zobrist_values.pieces[@intFromBool(color)][piece][sq];
+        if (piece == pieces.PAWN) {
+            b.state.pawn_structure_key ^= zobrist_values.pieces[@intFromBool(color)][piece][sq];
+        }
     }
 
     pub fn movePiece(b: *Board, comptime color: bool, piece: usize, from: usize, to: usize) void {
@@ -459,6 +473,9 @@ pub const Board = struct {
         b.pieces[to] = piece;
         const z = &zobrist_values.pieces[@intFromBool(color)][piece];
         b.state.zobrist_key ^= z[from] | z[to];
+        if (piece == pieces.PAWN) {
+            b.state.pawn_structure_key ^= z[from] | z[to];
+        }
     }
 
     // Popping the move from the history automatically restores a lot of value

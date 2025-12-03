@@ -1,6 +1,7 @@
 const std = @import("std");
 const types = @import("types.zig");
 const chess = @import("../chess.zig");
+const bitboard = chess.bitboard;
 
 /// Material value in the middlegame
 const mg_material: [6]types.Score = .{ 0, 1025, 477, 365, 337, 82 };
@@ -189,15 +190,81 @@ pub const safety: [100]types.Score = .{
     500, 500, 500, 500, 500, 500, 500, 500, 500, 500,
 };
 
+pub const passed_pawn_values: [9]types.Score = .{
+    0, 50, 60, 65, 70, 73, 75, 77, 79
+};
+
+pub const double_pawn_value: types.Score = -15;
+
 pub const vec_mul_2 = @Vector(2, u64){ 2, 2 };
 pub const vec_mul_3 = @Vector(2, u64){ 3, 3 };
 pub const vec_mul_4 = @Vector(2, u64){ 4, 4 };
 pub const vec_mul_5 = @Vector(2, u64){ 5, 5 };
 
-// [white, black]
 pub const king_zones: [2][64]u64 = blk: {
     @setEvalBranchQuota(10_000);
     break :blk initKingZones();
+};
+
+pub const pawn_files: [8]u64 = .{
+    bitboard.FILE_A | bitboard.FILE_B,
+    bitboard.FILE_A | bitboard.FILE_B | bitboard.FILE_C,
+    bitboard.FILE_B | bitboard.FILE_C | bitboard.FILE_D,
+    bitboard.FILE_C | bitboard.FILE_D | bitboard.FILE_E,
+    bitboard.FILE_D | bitboard.FILE_E | bitboard.FILE_F,
+    bitboard.FILE_E | bitboard.FILE_F | bitboard.FILE_G,
+    bitboard.FILE_F | bitboard.FILE_G | bitboard.FILE_H,
+    bitboard.FILE_G | bitboard.FILE_H,
+};
+
+pub const passed_pawn_masks: [2][64]u64 = blk: {
+    var res: [2][64]u64 = undefined;
+
+    for (chess.Square.ALL_SQUARES) |sq| {
+        const file = sq.file();
+        const rank = sq.rank();
+
+        var rank_mask_b = 0;
+        var rank_mask_w = 0;
+
+        for (0..8) |r| {
+            if (r > rank) {
+                rank_mask_w |= bitboard.RANKS[r];
+            } else if (r < rank) {
+                rank_mask_b |= bitboard.RANKS[r];
+            }
+        }
+
+        res[0][sq.x] = pawn_files[file] & rank_mask_b;
+        res[1][sq.x] = pawn_files[file] & rank_mask_w;
+    }
+
+    break :blk res;
+};
+
+pub const double_pawn_masks: [2][64]u64 = blk: {
+    var res: [2][64]u64 = undefined;
+
+    for (chess.Square.ALL_SQUARES) |sq| {
+        const file = sq.file();
+        const rank = sq.rank();
+
+        var rank_mask_b = 0;
+        var rank_mask_w = 0;
+
+        for (0..8) |r| {
+            if (r < rank) {
+                rank_mask_w |= bitboard.RANKS[r];
+            } else if (r > rank) {
+                rank_mask_b |= bitboard.RANKS[r];
+            }
+        }
+
+        res[0][sq.x] = bitboard.FILES[file] & rank_mask_b;
+        res[1][sq.x] = bitboard.FILES[file] & rank_mask_w;
+    }
+
+    break :blk res;
 };
 
 fn goNord(orgin: chess.Square, n: usize) u64 {

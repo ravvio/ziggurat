@@ -14,9 +14,9 @@ pub const Transposition = struct {
     /// Hash of the transposition, we only use the lower half of the
     /// zobrist key to save space
     verification: u32 = 0,
-    depth: u8 = 0,
     move: u32 = 0,
     score: types.Score = 0,
+    depth: u8 = 0,
     flag: TranspositionFlag = TranspositionFlag.None,
 };
 
@@ -54,8 +54,6 @@ const Bucket = struct {
         return null;
     }
 };
-
-const high_bytes: u64 = 0xFF_FF_FF_FF_00_00_00_00;
 
 pub const TT = struct {
     megabytes: usize,
