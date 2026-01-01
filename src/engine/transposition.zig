@@ -25,22 +25,28 @@ const Bucket = struct {
     content: [bucket_size]Transposition = std.mem.zeroes([bucket_size]Transposition),
 
     pub fn store(self: *Bucket, item: Transposition, used: *usize) void {
-        // Find the item in the bucket that has the lowest depth
-        // and substitute it
+        // Find the item in the bucket that has the highest depth
+        // or an unused one
         var index: usize = 0;
-        var lowest_depth = self.content[0].depth;
-        for (1..bucket_size) |i| {
-            if (self.content[i].depth < lowest_depth) {
+        var high_depth: u8 = 0;
+        var unused: bool = false;
+        for (0..bucket_size) |i| {
+            if (self.content[index].verification == 0) {
                 index = i;
-                lowest_depth = item.depth;
+                unused = true;
+                break;
+            }
+            if (self.content[i].depth > high_depth) {
+                index = i;
+                high_depth = item.depth;
             }
         }
-        const low = &self.content[index];
+        const high = &self.content[index];
         // Verification is 0 so the entry is still unused
-        if (low.verification == 0) {
+        if (high.verification == 0) {
             used.* += 1;
         }
-        low.* = item;
+        high.* = item;
     }
 
     pub fn find(self: *const Bucket, verification: u32) ?Transposition {
@@ -96,10 +102,21 @@ pub const TT = struct {
         }
     }
 
-    pub fn index(self: *TT, zobrist_key: u64) usize {
+    pub inline fn index(self: *TT, zobrist_key: u64) usize {
         // Use only the upper half of the Zobrist key for this, so the lower
         // half can be used to calculate a verification.
         return @truncate((zobrist_key >> 32) % self.size);
+    }
+
+    pub fn prefetch(self: *TT, zobrist_key: u64) void {
+        @prefetch(
+            &self.data[self.index(zobrist_key)],
+            .{
+                .rw = .read,
+                .locality = 1,
+                .cache = .data,
+            },
+        );
     }
 
     pub fn put(
@@ -124,7 +141,7 @@ pub const TT = struct {
         );
     }
 
-    pub fn probe(self: *TT, zobrist_key: u64) ?Transposition {
+    pub inline fn probe(self: *TT, zobrist_key: u64) ?Transposition {
         const res = self.data[self.index(zobrist_key)].find(@truncate(zobrist_key));
         if (res == null or res.?.flag == TranspositionFlag.None) {
             return null;

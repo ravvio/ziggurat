@@ -414,8 +414,11 @@ pub const Engine = struct {
 
             // Increment ply, add to history, increase moves found
             self.ply += 1;
-            self.hash_history.append(allocator, zobrist_key) catch unreachable;
+            self.hash_history.append(allocator, board.state.zobrist_key) catch unreachable;
             movesfound += 1;
+
+            // Prefetch hash
+            // transposition.global_tt.prefetch(board.state.zobrist_key);
 
             // Evaluate the leaf
             var score: types.Score = undefined;
