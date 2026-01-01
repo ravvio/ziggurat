@@ -16,14 +16,15 @@ pub const PerftBench = struct {
         };
     }
 
-    pub fn run(self: PerftBench, alloc: std.mem.Allocator) void {
-        var board = chess.Board.fromFen(alloc, self.fen) catch {
+    pub fn run(self: PerftBench, allocator: std.mem.Allocator) void {
+        var board = chess.Board.fromFen(allocator, self.fen) catch {
             @panic("could not create bench board form fen");
         };
+        defer board.deinit(allocator);
         if (board.state.current_side) {
-            _ = perft.perft(&board, true, self.depth);
+            _ = perft.perft(allocator, &board, true, self.depth);
         } else {
-            _ = perft.perft(&board, false, self.depth);
+            _ = perft.perft(allocator, &board, false, self.depth);
         }
     }
 };

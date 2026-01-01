@@ -16,23 +16,24 @@ pub const EvalBench = struct {
         };
     }
 
-    pub fn run(self: EvalBench, alloc: std.mem.Allocator) void {
-        var board = chess.Board.fromFen(alloc, self.fen) catch {
+    pub fn run(self: EvalBench, allocator: std.mem.Allocator) void {
+        var board = chess.Board.fromFen(allocator, self.fen) catch {
             @panic("could not create bench board form fen");
         };
-        defer board.deinit();
-        var e = engine.Engine.init(alloc) catch {
+        defer board.deinit(allocator);
+        var e = engine.Engine.init(allocator) catch {
             @panic("could not initialize engine");
         };
         e.quiet = true;
-        defer e.deinit();
+        defer e.deinit(allocator);
 
         engine.transposition.global_tt.clear();
+        engine.pawn_hashtable.global_pt.clear();
 
         if (board.state.current_side) {
-            e.search(&board, true, self.depth);
+            e.search(allocator, &board, true, self.depth);
         } else {
-            e.search(&board, false, self.depth);
+            e.search(allocator, &board, false, self.depth);
         }
     }
 };

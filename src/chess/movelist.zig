@@ -19,7 +19,7 @@ const mvv_lva: [7][7]u8 = .{
     .{ 30, 31, 32, 33, 34, 35, 0 }, // victim B, attacker K, Q, R, B, N, P, None
     .{ 20, 21, 22, 23, 24, 25, 0 }, // victim N, attacker K, Q, R, B, N, P, None
     .{ 10, 11, 12, 13, 14, 15, 0 }, // victim P, attacker K, Q, R, B, N, P, None
-    .{ 0, 0, 0, 0, 0, 0, 0 }, // victim None, attacker K, Q, R, B, N, P, None
+    .{ 1, 2, 3, 4, 5, 6, 0 }, // victim None, attacker K, Q, R, B, N, P, None
 };
 
 pub const Movelist = struct {

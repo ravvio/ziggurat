@@ -1,5 +1,6 @@
 const std = @import("std");
 const ArrayList = std.ArrayList;
+const Allocator = std.mem.Allocator;
 
 const bb = @import("./bitboard.zig");
 const GameState = @import("./gamestate.zig").GameState;
@@ -22,20 +23,20 @@ pub const Board = struct {
     pieces: [64]usize = [1]usize{constants.pieces.NONE} ** 64,
 
     state: GameState,
-    history: std.array_list.Managed(GameState),
+    history: std.ArrayList(GameState),
 
-    pub fn init(alloc: std.mem.Allocator) Board {
-        const history = std.array_list.Managed(GameState).init(alloc);
+    pub fn init(allocator: Allocator) !Board {
+        const history = try std.ArrayList(GameState).initCapacity(allocator, 2048);
         return .{
             .state = GameState{},
             .history = history,
         };
     }
 
-    pub fn setFen(self: *Board, fen: []const u8) !void {
+    pub fn setFen(self: *@This(), fen: []const u8) !void {
         var it = std.mem.splitScalar(u8, fen, ' ');
 
-        self.history.clearAndFree();
+        self.history.clearRetainingCapacity();
 
         // Part 1 - Pieces
         const split = it.next();
@@ -189,16 +190,20 @@ pub const Board = struct {
     }
 
     pub fn fromFen(
-        alloc: std.mem.Allocator,
+        allocator: Allocator,
         fen: []const u8,
     ) !Board {
-        var res = init(alloc);
+        var res = try init(allocator);
         try res.setFen(fen);
         return res;
     }
 
-    pub fn deinit(b: *Board) void {
-        b.history.deinit();
+    pub fn clear(b: *Board, allocator: Allocator) void {
+        b.history.clearAndFree(allocator);
+    }
+
+    pub fn deinit(b: *Board, allocator: Allocator) void {
+        b.history.deinit(allocator);
     }
 
     pub fn parseMove(b: *Board, str: []const u8) ChessError!ChessMove {
@@ -283,15 +288,14 @@ pub const Board = struct {
     /// This method does not checks the legality
     pub fn makeMove(
         b: *Board,
+        allocator: Allocator,
         move: ChessMove,
         comptime color: bool,
     ) void {
         // Store unmake info
         var state = b.state;
         state.next_move = move;
-        b.history.append(state) catch {
-            @panic("Tried to append to history but failed");
-        };
+        b.history.append(allocator, state) catch unreachable;
 
         // Shorthands
         const capture = move.capture();
@@ -409,11 +413,10 @@ pub const Board = struct {
 
     pub fn makeNullMove(
         b: *Board,
+        allocator: Allocator,
     ) void {
         const state = b.state;
-        b.history.append(state) catch {
-            @panic("Tried to append to history but failed");
-        };
+        b.history.append(allocator, state) catch unreachable;
 
         if (b.state.en_passant != null) {
             b.removeEnPassant();
@@ -780,21 +783,24 @@ fn addToMovelist(
 test "parse moves" {
     tables.initAll();
 
-    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
-    defer arena.deinit();
-    const alloc = arena.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer {
+        const deinit_status = gpa.deinit();
+        if (deinit_status == .leak) std.debug.assert(false);
+    }
+    const allocator = gpa.allocator();
 
-    var board = try Board.fromFen(alloc, constants.Fen.STARTPOS);
-    defer board.deinit();
+    var board = try Board.fromFen(allocator, constants.Fen.STARTPOS);
+    defer board.deinit(allocator);
 
     const moves = "f2f4 d7d5 g1f3 g8f6 b2b3 d5d4 c1b2 c7c5 e2e3 d8a5 e3d4 c5d4 f3d4 e7e5 f1b5 f6d7 d1e2 e8d8 f4e5 a7a6 b5d7 c8d7 h1f1 f7f6 e5f6 g7f6 b1c3 f8g7 e1c1 f6f5 d4e6 d7e6 e2e6 a5e5 e6f7 e5e7 f7e7 d8e7 c3d5 e7f7 f1f5 f7g6 b2g7 g6g7 d5c7 g7g6 d1f1 a8a7 c7e6 g6h6 f5g5 h8g8 g5g8 b8d7 f1f3 d7f6 f3f6 h6h5 e6f4 h5h4 c1b1 a6a5 b1a1 a5a4 a1b1 a4b3 b1c1 b3b2 c1b1 a7a2 b1a2 b2b1b a2a1";
     var it = std.mem.splitScalar(u8, moves, ' ');
     while (it.next()) |str| {
         const move = try board.parseMove(str);
         if (board.state.current_side) {
-            board.makeMove(move, true);
+            board.makeMove(allocator, move, true);
         } else {
-            board.makeMove(move, false);
+            board.makeMove(allocator, move, false);
         }
     }
 }

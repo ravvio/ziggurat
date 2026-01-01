@@ -19,13 +19,16 @@ pub fn main() !void {
     });
     defer bench.deinit();
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer {
+        const deinit_status = gpa.deinit();
+        if (deinit_status == .leak) @panic("Leak detected");
+    }
+    const allocator = gpa.allocator();
     try engine.transposition.initGlobalTranspositionTable(allocator, 64);
     try engine.pawn_hashtable.initGlobalPawnTable(allocator, 4);
-    defer engine.transposition.global_tt.deinit();
-    defer engine.pawn_hashtable.global_pt.deinit();
+    defer engine.transposition.global_tt.deinit(allocator);
+    defer engine.pawn_hashtable.global_pt.deinit(allocator);
 
     try bench.addParam(
         "Perft2 startpos",

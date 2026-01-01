@@ -2,6 +2,7 @@ const std = @import("std");
 const chess = @import("./chess.zig");
 
 pub fn perft(
+    allocator: std.mem.Allocator,
     board: *chess.Board,
     comptime color: bool,
     depth: u8,
@@ -21,12 +22,12 @@ pub fn perft(
 
     var i: usize = 0;
     while (i < ml.count) : (i += 1) {
-        board.makeMove(ml.list[i], color);
+        board.makeMove(allocator, ml.list[i], color);
         if (board.isKingAttacked(color)) {
             board.unmakeMove(color);
             continue;
         }
-        total += perft(board, !color, depth - 1);
+        total += perft(allocator, board, !color, depth - 1);
         board.unmakeMove(color);
     }
 
@@ -35,6 +36,7 @@ pub fn perft(
 
 // TODO change to stdout
 pub fn perftDivide(
+    allocator: std.mem.Allocator,
     board: *chess.Board,
     comptime color: bool,
     depth: u8,
@@ -56,12 +58,12 @@ pub fn perftDivide(
     std.debug.print("{d}\n", .{ml.count});
     while (i < ml.count) : (i += 1) {
         const move = ml.list[i];
-        board.makeMove(move, color);
+        board.makeMove(allocator, move, color);
         if (board.isKingAttacked(color)) {
             board.unmakeMove(color);
             continue;
         }
-        const leaves = perft(board, !color, depth - 1);
+        const leaves = perft(allocator, board, !color, depth - 1);
         std.debug.print("{any}: {d}\n", .{ move, leaves });
         total += leaves;
         board.unmakeMove(color);
@@ -74,11 +76,11 @@ pub fn perftDivide(
 test "perft startpos" {
     chess.tables.initAll();
 
-    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
-    defer arena.deinit();
-    const alloc = arena.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer gpa.deinit();
+    const allocator = gpa.allocator();
 
-    var board = try chess.Board.fromFen(alloc, chess.constants.Fen.STARTPOS);
+    var board = try chess.Board.fromFen(allocator, chess.constants.Fen.STARTPOS);
     defer board.deinit();
 
     var res = perft(&board, true, 1);
@@ -98,11 +100,14 @@ test "perft startpos" {
 test "perft kiwipete" {
     chess.tables.initAll();
 
-    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
-    defer arena.deinit();
-    const alloc = arena.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer {
+        const deinit_status = gpa.deinit();
+        if (deinit_status == .leak) @panic("Leak detected");
+    }
+    const allocator = gpa.allocator();
 
-    var board = try chess.Board.fromFen(alloc, chess.constants.Fen.KIWIPETE);
+    var board = try chess.Board.fromFen(allocator, chess.constants.Fen.KIWIPETE);
     defer board.deinit();
 
     var res = perft(&board, true, 1);
@@ -120,11 +125,14 @@ test "perft kiwipete" {
 test "broken position" {
     chess.tables.initAll();
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const alloc = arena.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer {
+        const deinit_status = gpa.deinit();
+        if (deinit_status == .leak) @panic("Leak detected");
+    }
+    const allocator = gpa.allocator();
 
-    var board = try chess.Board.fromFen(alloc, "rnbq1bnr/ppppp3/5k2/6p1/6p1/1P2P2P/P1PP4/RNBQKBNR w - - 0 9");
+    var board = try chess.Board.fromFen(allocator, "rnbq1bnr/ppppp3/5k2/6p1/6p1/1P2P2P/P1PP4/RNBQKBNR w - - 0 9");
     defer board.deinit();
 
     var res = perft(&board, true, 2);

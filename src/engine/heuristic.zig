@@ -92,7 +92,7 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
 
     final += mobility_score;
     final += computeKingSafety(board, &white_targets, &black_targets);
-    final += computePawnStructure(board);
+    // final += computePawnStructure(board);
     return sign * final;
 }
 
@@ -133,9 +133,9 @@ pub fn computeKingSafety(
 
 pub fn computePawnStructure(board: *const chess.Board) types.Score {
     // Check hashtable
-    // if (pawn_hashtable.global_pt.probe(board.state.pawn_structure_key)) |s| {
-    //     return s.score;
-    // }
+    if (pawn_hashtable.global_pt.probe(board.state.pawn_structure_key)) |s| {
+        return s.score;
+    }
 
     const black_pawns = board.pawns(Colors.black);
     const white_pawns = board.pawns(Colors.white);
@@ -172,7 +172,7 @@ pub fn computePawnStructure(board: *const chess.Board) types.Score {
     score += tables.passed_pawn_values[passed_w] - tables.passed_pawn_values[passed_b];
 
     // Store score
-    // pawn_hashtable.global_pt.put(board.state.pawn_structure_key, score);
+    pawn_hashtable.global_pt.put(board.state.pawn_structure_key, score);
 
     return score;
 }

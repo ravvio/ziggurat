@@ -59,7 +59,7 @@ pub const TT = struct {
     megabytes: usize,
     size: usize,
     used: usize = 0,
-    data: std.array_list.Managed(Bucket),
+    data: []Bucket,
 
     pub fn init(allocator: std.mem.Allocator, megabytes: usize) !TT {
         const bucket_bytes = @sizeOf(Transposition) * bucket_size;
@@ -68,22 +68,23 @@ pub const TT = struct {
         var tt = TT{
             .megabytes = megabytes,
             .size = size,
-            .data = std.array_list.Managed(Bucket).init(allocator),
+            .data = try allocator.alloc(Bucket, size),
         };
-        try tt.data.ensureTotalCapacity(size);
-        tt.data.expandToCapacity();
+        for (0..tt.data.len) |i| {
+            tt.data[i] = Bucket{};
+        }
         return tt;
     }
 
-    pub fn deinit(self: *TT) void {
-        self.data.deinit();
+    pub fn deinit(self: *TT, allocator: std.mem.Allocator) void {
+        allocator.free(self.data);
     }
 
     pub fn clear(self: *TT) void {
         self.used = 0;
-        self.data.clearAndFree();
-        self.data.ensureTotalCapacity(self.size) catch unreachable;
-        self.data.expandToCapacity();
+        for (0..self.data.len) |i| {
+            self.data[i] = Bucket{};
+        }
     }
 
     /// Reports the occupancy of the table in permillis
@@ -111,7 +112,7 @@ pub const TT = struct {
     ) void {
         var move = move_;
         move.removeSortScore();
-        self.data.items[self.index(zobrist_key)].store(
+        self.data[self.index(zobrist_key)].store(
             Transposition{
                 .depth = depth,
                 .verification = @truncate(zobrist_key),
@@ -124,7 +125,7 @@ pub const TT = struct {
     }
 
     pub fn probe(self: *TT, zobrist_key: u64) ?Transposition {
-        const res = self.data.items[self.index(zobrist_key)].find(@truncate(zobrist_key));
+        const res = self.data[self.index(zobrist_key)].find(@truncate(zobrist_key));
         if (res == null or res.?.flag == TranspositionFlag.None) {
             return null;
         }

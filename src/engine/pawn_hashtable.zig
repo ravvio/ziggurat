@@ -16,31 +16,38 @@ pub const PT = struct {
     megabytes: usize,
     size: usize,
     used: usize = 0,
-    data: std.array_list.Managed(PawnStructure),
+    data: []PawnStructure,
 
     pub fn init(allocator: std.mem.Allocator, megabytes: usize) !PT {
         const structure_size = @sizeOf(PawnStructure);
         const size = @divTrunc(megabytes * 1024 * 1024, structure_size);
 
-        var tt = PT{
+        const tt = PT{
             .megabytes = megabytes,
             .size = size,
-            .data = std.array_list.Managed(PawnStructure).init(allocator),
+            .data = try allocator.alloc(PawnStructure, size)
         };
-        try tt.data.ensureTotalCapacity(size);
-        tt.data.expandToCapacity();
+        for (0..tt.data.len) |i| {
+            tt.data[i] = PawnStructure{
+                .verification = 0,
+                .score = 0,
+            };
+        }
         return tt;
     }
 
-    pub fn deinit(self: *PT) void {
-        self.data.deinit();
+    pub fn deinit(self: *PT, allocator: std.mem.Allocator) void {
+        allocator.free(self.data);
     }
 
     pub fn clear(self: *PT) void {
         self.used = 0;
-        self.data.clearAndFree();
-        self.data.ensureTotalCapacity(self.size) catch unreachable;
-        self.data.expandToCapacity();
+        for (0..self.data.len) |i| {
+            self.data[i] = PawnStructure{
+                .verification = 0,
+                .score = 0,
+            };
+        }
     }
 
     /// Reports the occupancy of the table in permillis
@@ -60,20 +67,20 @@ pub const PT = struct {
 
     pub fn put(
         self: *PT,
-        zobrist_key: u64,
+        pawn_key: u64,
         score: types.Score,
     ) void {
-        self.data.items[self.index(zobrist_key)] = .{
-            .verification = @truncate(zobrist_key),
+        self.data[self.index(pawn_key)] = .{
+            .verification = @truncate(pawn_key),
             .score = score,
         };
         self.used += 1;
     }
 
-    pub fn probe(self: *PT, zobrist_key: u64) ?PawnStructure {
-        const res = self.data.items[self.index(zobrist_key)];
+    pub fn probe(self: *PT, pawn_key: u64) ?PawnStructure {
+        const res = self.data[self.index(pawn_key)];
         if (res.verification != 0) {
-            const ok = @as(u32, @truncate(zobrist_key)) == @as(u32, @truncate(zobrist_key));
+            const ok = @as(u32, @truncate(pawn_key)) == @as(u32, @truncate(pawn_key));
             if (ok) {
                 return res;
             }

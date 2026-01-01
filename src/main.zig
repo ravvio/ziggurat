@@ -27,21 +27,24 @@ pub fn run_perft(args: *std.process.ArgIterator) !void {
         fen = chess.constants.Fen.STARTPOS;
     }
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer {
+        const deinit_status = gpa.deinit();
+        if (deinit_status == .leak) @panic("Leak detected");
+    }
+    const allocator = gpa.allocator();
 
     var board = try chess.Board.fromFen(allocator, fen.?);
-    defer board.deinit();
+    defer board.deinit(allocator);
 
     if (args.next()) |token| {
         if (std.mem.eql(u8, token, "moves")) {
             while (args.next()) |m| {
                 const move = try board.parseMove(m);
                 if (board.state.current_side) {
-                    board.makeMove(move, true);
+                    board.makeMove(allocator, move, true);
                 } else {
-                    board.makeMove(move, false);
+                    board.makeMove(allocator, move, false);
                 }
             }
         }
@@ -50,9 +53,9 @@ pub fn run_perft(args: *std.process.ArgIterator) !void {
     const color = board.state.current_side;
 
     if (color) {
-        _ = perft.perftDivide(&board, true, depth);
+        _ = perft.perftDivide(allocator, &board, true, depth);
     } else {
-        _ = perft.perftDivide(&board, false, depth);
+        _ = perft.perftDivide(allocator, &board, false, depth);
     }
 }
 
@@ -73,12 +76,15 @@ pub fn run_eval(args: *std.process.ArgIterator) !void {
         fen = chess.constants.Fen.STARTPOS;
     }
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer {
+        const deinit_status = gpa.deinit();
+        if (deinit_status == .leak) @panic("Leak detected");
+    }
+    const allocator = gpa.allocator();
 
     var board = try chess.Board.fromFen(allocator, fen.?);
-    defer board.deinit();
+    defer board.deinit(allocator);
     const color = board.state.current_side;
 
     if (args.next()) |token| {
@@ -86,9 +92,9 @@ pub fn run_eval(args: *std.process.ArgIterator) !void {
             while (args.next()) |m| {
                 const move = try board.parseMove(m);
                 if (board.state.current_side) {
-                    board.makeMove(move, true);
+                    board.makeMove(allocator, move, true);
                 } else {
-                    board.makeMove(move, false);
+                    board.makeMove(allocator, move, false);
                 }
             }
         }
@@ -97,12 +103,12 @@ pub fn run_eval(args: *std.process.ArgIterator) !void {
     var e = engine.Engine.init(allocator) catch {
         @panic("could not initialize engine");
     };
-    defer e.deinit();
+    defer e.deinit(allocator);
 
     if (color) {
-        e.search(&board, true, depth);
+        e.search(allocator, &board, true, depth);
     } else {
-        e.search(&board, false, depth);
+        e.search(allocator, &board, false, depth);
     }
 
     std.debug.print("\nBest: {f}\n", .{e.best_move});
@@ -110,23 +116,28 @@ pub fn run_eval(args: *std.process.ArgIterator) !void {
 }
 
 pub fn main() !void {
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer {
+        const deinit_status = gpa.deinit();
+        if (deinit_status == .leak) @panic("Leak detected");
+    }
+    const allocator = gpa.allocator();
 
     ziggurat.initAll();
     try engine.transposition.initGlobalTranspositionTable(allocator, 64);
     try engine.pawn_hashtable.initGlobalPawnTable(allocator, 4);
-    defer engine.transposition.global_tt.deinit();
-    defer engine.pawn_hashtable.global_pt.deinit();
+    defer engine.transposition.global_tt.deinit(allocator);
+    defer engine.pawn_hashtable.global_pt.deinit(allocator);
 
     var args = try std.process.argsWithAllocator(allocator);
+    defer args.deinit();
     _ = args.next();
     const subcommand = args.next();
 
     if (subcommand == null) {
         var uci = try engine.Uci.init(allocator);
-        try uci.run();
+        defer uci.deinit(allocator);
+        try uci.run(allocator);
     } else if (std.mem.eql(u8, subcommand.?, "perft")) {
         try run_perft(&args);
     } else if (std.mem.eql(u8, subcommand.?, "eval")) {

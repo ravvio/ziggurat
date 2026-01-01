@@ -15,7 +15,7 @@ const max_game_ply = 1024;
 const max_ply: u8 = 128;
 const max_extension: u8 = 24;
 
-const null_reduction: u8 = 4;
+const null_reduction: u8 = 3;
 
 // Capture & Promotions / Quiet
 const lmr_depths: [2][64][64]u8 = blk: {
@@ -92,29 +92,30 @@ pub const Engine = struct {
     score: types.Score = 0,
 
     /// History of hashes in the search
-    hash_history: std.array_list.Managed(u64),
+    hash_history: std.ArrayList(u64),
 
     pub fn init(allocator: std.mem.Allocator) !Engine {
-        const hash_history = std.array_list.Managed(u64).initCapacity(allocator, max_game_ply) catch unreachable;
+        const hash_history = try std.ArrayList(u64).initCapacity(allocator, max_game_ply);
         return .{
             .hash_history = hash_history,
         };
     }
 
+    pub fn clear(self: *@This(), allocator: std.mem.Allocator) void {
+        self.hash_history.clearAndFree(allocator);
+    }
+
     pub fn reset(self: *Engine) void {
-        self.hash_history.clearAndFree();
         self.nodes = 0;
         self.best_move = chess.ChessMove{};
         self.killer_moves = std.mem.zeroes([max_ply][2]chess.ChessMove);
         for (&self.principal_variation_size) |*size| {
             size.* = 0;
         }
-        transposition.global_tt.clear();
-        pawn_hashtable.global_pt.clear();
     }
 
-    pub fn deinit(self: *Engine) void {
-        self.hash_history.deinit();
+    pub fn deinit(self: *Engine, allocator: std.mem.Allocator) void {
+        self.hash_history.deinit(allocator);
     }
 
     fn shouldStop(self: *Engine) bool {
@@ -131,6 +132,7 @@ pub const Engine = struct {
     /// https://www.chessprogramming.org/Iterative_Deepening
     pub fn search(
         self: *Engine,
+        allocator: std.mem.Allocator,
         board: *chess.Board,
         comptime color: bool,
         max_depth: ?u8,
@@ -142,7 +144,7 @@ pub const Engine = struct {
 
         // Load history from board
         for (board.history.items) |state| {
-            self.hash_history.append(state.zobrist_key) catch unreachable;
+            self.hash_history.append(allocator, state.zobrist_key) catch unreachable;
         }
 
         self.stop = false;
@@ -157,14 +159,15 @@ pub const Engine = struct {
             self.ply = 0;
             self.seldepth = 0;
 
-            const alpha = -heuristic.mate_score - 1;
-            const beta = heuristic.mate_score + 1;
+            const alpha = -heuristic.mate_score;
+            const beta = heuristic.mate_score;
             var score = self.score;
 
             while (true) {
                 self.depth = @max(self.depth, tdepth);
 
                 score = self.negamax(
+                    allocator,
                     board,
                     color,
                     NodeType.Root,
@@ -238,6 +241,7 @@ pub const Engine = struct {
     /// More: https://www.chessprogramming.org/Negamax
     pub fn negamax(
         self: *Engine,
+        allocator: std.mem.Allocator,
         board: *chess.Board,
         comptime color: bool,
         comptime node_type: NodeType,
@@ -280,6 +284,7 @@ pub const Engine = struct {
         // Depth 0 reached, proceed to quiescence
         if (depth == 0) {
             return self.quiescence(
+                allocator,
                 board,
                 color,
                 alpha_,
@@ -341,14 +346,16 @@ pub const Engine = struct {
         }
 
         // === Pruning
-        if (!in_check) {
+        if (!in_check and node_type == NodeType.Other) {
             // NULL MOVE PRUNING
             // More: https://www.chessprogramming.org/Null_Move_Pruning
-            if (node_type == NodeType.Other and !is_null and depth > 1 + null_reduction) {
+            if (!is_null and depth > 1 + null_reduction
+                // do not if low material
+            and @popCount(board.colors[0] | board.colors[1]) > 8) {
                 self.ply += 1;
-                board.makeNullMove();
-
+                board.makeNullMove(allocator);
                 var null_score = -self.negamax(
+                    allocator,
                     board,
                     !color,
                     NodeType.Other,
@@ -358,7 +365,6 @@ pub const Engine = struct {
                     -beta + 1,
                     extension,
                 );
-
                 self.ply -= 1;
                 board.unmakeNullMove();
 
@@ -382,7 +388,7 @@ pub const Engine = struct {
         var movelist = chess.Movelist.new();
         board.generatePseudolegalMoves(chess.constants.MoveType.All, color, &movelist);
 
-        // - Initialize kille move
+        // - Initialize killer moves
         self.killer_moves[self.ply + 1][0] = chess.ChessMove{};
         self.killer_moves[self.ply + 1][1] = chess.ChessMove{};
 
@@ -395,7 +401,7 @@ pub const Engine = struct {
         while (movelist.pick()) |move| {
 
             // Make the move
-            board.makeMove(move, color);
+            board.makeMove(allocator, move, color);
 
             // Undo if kind is attacked i.e. illegal move was made
             if (board.isKingAttacked(color)) {
@@ -408,7 +414,7 @@ pub const Engine = struct {
 
             // Increment ply, add to history, increase moves found
             self.ply += 1;
-            self.hash_history.append(zobrist_key) catch unreachable;
+            self.hash_history.append(allocator, zobrist_key) catch unreachable;
             movesfound += 1;
 
             // Evaluate the leaf
@@ -424,6 +430,7 @@ pub const Engine = struct {
             // More: https://www.chessprogramming.org/Principal_Variation_Search
             if (node_type != NodeType.Other and movesfound == 1) {
                 score = -self.negamax(
+                    allocator,
                     board,
                     !color,
                     NodeType.PV,
@@ -449,6 +456,7 @@ pub const Engine = struct {
                     const reduced_depth = depth - reduction;
 
                     score = -self.negamax(
+                        allocator,
                         board,
                         !color,
                         NodeType.Other,
@@ -466,6 +474,7 @@ pub const Engine = struct {
                 // if we were in LMR we found good idea
                 if (do_full_depth) {
                     score = -self.negamax(
+                        allocator,
                         board,
                         !color,
                         NodeType.Other,
@@ -480,6 +489,7 @@ pub const Engine = struct {
                 // Research for PV nodes
                 if (node_type != NodeType.Other and score > alpha) {
                     score = -self.negamax(
+                        allocator,
                         board,
                         !color,
                         NodeType.PV,
@@ -538,10 +548,11 @@ pub const Engine = struct {
         // otherwhise is a stalemate
         if (movesfound == 0) {
             if (in_check) {
-                return best_score;
+                best_score = -heuristic.mate_score + self.ply;
             } else {
-                return 0;
+                best_score = 0;
             }
+            alpha = best_score;
         }
 
         // Set killer for quiet moves
@@ -578,7 +589,8 @@ pub const Engine = struct {
     /// only if the position is quiet
     /// More: https://www.chessprogramming.org/Quiescence_Search
     fn quiescence(
-        self: *Engine,
+        self: *@This(),
+        allocator: std.mem.Allocator,
         board: *chess.Board,
         comptime color: bool,
         alpha_: types.Score,
@@ -679,7 +691,7 @@ pub const Engine = struct {
         // Iterate all moves
         while (movelist.pick()) |move| {
             // Make the move
-            board.makeMove(move, color);
+            board.makeMove(allocator, move, color);
             // Undo if kind is attacked i.e. illegal move was made
             if (board.isKingAttacked(color)) {
                 board.unmakeMove(color);
@@ -694,6 +706,7 @@ pub const Engine = struct {
 
             // Evaluate the leaf
             const leaf_eval = -self.quiescence(
+                allocator,
                 board,
                 !color,
                 -beta,
@@ -752,7 +765,7 @@ pub const Engine = struct {
         // the move one time is considered a draw position
         // Impossible to have a 3 fold repetition before 6 ply
         if (self.hash_history.items.len >= 6) {
-            var rep: bool = false;
+            // var rep: bool = false;
             // Start from the top, is easier that we will find a repetition there
             var index: usize = self.hash_history.items.len - 3;
             // We need only to check until the last pawn move
@@ -763,12 +776,7 @@ pub const Engine = struct {
             // Count down by 2 given that the position must be of the right color
             while (index >= limit) : (index -= 2) {
                 if (self.hash_history.items[index] == board.state.zobrist_key) {
-                    if (!rep) {
-                        rep = true;
-                        continue;
-                    } else {
-                        return true;
-                    }
+                    return true;
                 }
             }
         }

@@ -1,7 +1,10 @@
 const std = @import("std");
+
 const chess = @import("../chess.zig");
-const Engine = @import("./engine.zig").Engine;
 const perft = @import("../perft.zig");
+const Engine = @import("./engine.zig").Engine;
+const transposition = @import("./transposition.zig");
+const pawn_hashtable = @import("./pawn_hashtable.zig");
 
 /// Implementation of the Universal Chess Interface
 /// More: https://www.chessprogramming.org/UCI
@@ -22,21 +25,22 @@ pub const Uci = struct {
         };
     }
 
-    pub fn deinit(self: *Uci) void {
-        self.engine.deinit();
-        self.board.deinit();
+    pub fn deinit(self: *Uci, allocator: std.mem.Allocator) void {
+        self.engine.deinit(allocator);
+        self.board.deinit(allocator);
     }
 
     /// Main loop inspired from Avalanche
     /// https://github.com/SnowballSH/Avalanche
-    pub fn run(self: *Uci) !void {
-        var inbuf: [1024]u8 = undefined;
+    pub fn run(self: *@This(), allocator: std.mem.Allocator) !void {
+        var inbuf: [4 * 1024]u8 = undefined;
         var stdin = std.fs.File.stdin().readerStreaming(&inbuf);
-        var outbuf: [1024]u8 = undefined;
+        var outbuf: [4 * 1024]u8 = undefined;
         var stdout = std.fs.File.stdout().writerStreaming(&outbuf);
 
         while (true) {
             const in = try stdin.interface.takeDelimiterExclusive('\n');
+            std.debug.print("in {s}\n", .{in});
 
             // Trim carriage return and split on space
             const line = std.mem.trim(u8, in, "\r");
@@ -52,6 +56,7 @@ pub const Uci = struct {
             }
             // Ask if ready
             else if (std.mem.eql(u8, cmd.?, "isready")) {
+                std.debug.print("ready\n", .{});
                 _ = try stdout.interface.write("readyok\n");
                 _ = try stdout.interface.flush();
             }
@@ -94,9 +99,10 @@ pub const Uci = struct {
             }
             // Start a new game
             else if (std.mem.eql(u8, cmd.?, "ucinewgame")) {
-                self.board.deinit();
-                self.engine.deinit();
-                // TODO Clear TT table
+                self.board.clear(allocator);
+                self.engine.clear(allocator);
+                transposition.global_tt.clear();
+                pawn_hashtable.global_pt.clear();
                 try self.board.setFen(chess.constants.Fen.STARTPOS);
             }
             // Print a debug view of the current position
@@ -110,9 +116,9 @@ pub const Uci = struct {
                     depth = @max(1, std.fmt.parseInt(u8, dep, 10) catch 1);
                 }
                 if (self.board.state.current_side) {
-                    _ = perft.perftDivide(&self.board, true, depth);
+                    _ = perft.perftDivide(allocator, &self.board, true, depth);
                 } else {
-                    _ = perft.perftDivide(&self.board, false, depth);
+                    _ = perft.perftDivide(allocator, &self.board, false, depth);
                 }
             }
             // Set fen position
@@ -137,9 +143,9 @@ pub const Uci = struct {
                             while (tokens.next()) |movestr| {
                                 const move = try self.board.parseMove(movestr);
                                 if (self.board.state.current_side) {
-                                    self.board.makeMove(move, true);
+                                    self.board.makeMove(allocator, move, true);
                                 } else {
-                                    self.board.makeMove(move, false);
+                                    self.board.makeMove(allocator, move, false);
                                 }
                                 // TODO Also push the move to any other history
                             }
@@ -157,7 +163,7 @@ pub const Uci = struct {
                 self.search_thread = try std.Thread.spawn(
                     .{ .stack_size = 64 * 1024 * 1024 },
                     startSearch,
-                    .{ &self.engine, &self.board, movetime, max_depth },
+                    .{ allocator, &self.engine, &self.board, movetime, max_depth },
                 );
             }
         }
@@ -288,6 +294,7 @@ pub const Uci = struct {
 };
 
 fn startSearch(
+    allocator: std.mem.Allocator,
     engine: *Engine,
     b: *chess.Board,
     movetime: u64,
@@ -298,8 +305,8 @@ fn startSearch(
     engine.max_time = movetime;
 
     if (b.state.current_side) {
-        engine.search(b, true, max_depth);
+        engine.search(allocator, b, true, max_depth);
     } else {
-        engine.search(b, false, max_depth);
+        engine.search(allocator, b, false, max_depth);
     }
 }
