@@ -648,3 +648,23 @@ v0.8.1 vs v0.8.0 - 500 games 40/1
 Elo difference: 91.7 +/- 24.0, LOS: 100.0 %, DrawRatio: 39.4 %
 ```
 
+### v0.8.2
+- Fix and use pawn structure
+
+```
+benchmark              runs     total time     time/run (avg ± σ)    (min ... max)                p75        p99        p995
+-----------------------------------------------------------------------------------------------------------------------------
+Perft2 startpos        100000   944.011ms      9.44us ± 1.201us      (8.8us ... 108.888us)        9.437us    12.228us   12.678us
+Perft4 startpos        1318     5.004s         3.797ms ± 223.152us   (3.614ms ... 6.257ms)        3.77ms     4.939ms    4.971ms
+Perft6 startpos        2        4.164s         2.082s ± 921.396us    (2.081s ... 2.083s)          2.083s     2.083s     2.083s
+Perft2 kiwipete        100000   3.666s         36.664us ± 6.662us    (34.01us ... 928.351us)      36.924us   40.665us   42.465us
+Perft4 kiwipete        63       4.962s         78.763ms ± 705.612us  (78.107ms ... 80.986ms)      78.776ms   80.986ms   80.986ms
+Eval6 startpos         680      4.995s         7.346ms ± 307.264us   (7.033ms ... 10.025ms)       7.376ms    9.178ms    9.584ms
+Eval8 startpos         264      4.989s         18.899ms ± 956.922us  (18.324ms ... 24.953ms)      18.74ms    23.153ms   23.155ms
+Eval10 startpos        47       5.106s         108.643ms ± 6.285ms   (100.091ms ... 127.444ms)    112.473ms  127.444ms  127.444ms
+Eval12 startpos        5        4.369s         873.973ms ± 8.459ms   (861.774ms ... 881.429ms)    879.98ms   881.429ms  881.429ms
+Eval6 kiwipete         199      4.981s         25.033ms ± 1.004ms    (24.34ms ... 31.715ms)       24.852ms   29.616ms   31.715ms
+Eval8 kiwipete         65       4.947s         76.12ms ± 3.313ms     (73.545ms ... 88.583ms)      77.268ms   88.583ms   88.583ms
+Eval10 startpos        14       4.816s         344.07ms ± 4.618ms    (336.466ms ... 351.788ms)    347.782ms  351.788ms  351.788ms
+Eval12 startpos        1        2.641s         2.641s ± 0ns          (2.641s ... 2.641s)          2.641s     2.641s     2.641s
+```

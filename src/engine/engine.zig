@@ -324,7 +324,7 @@ pub const Engine = struct {
 
             // Use transposition score only if not PV/Root and depth is greater or equal to
             // the current
-            if (!is_null and node_type == NodeType.Other and res.depth >= depth) {
+            else if (!is_null and node_type == NodeType.Other and res.depth >= depth) {
                 // Based on flag return score or set alpha/beta
                 switch (res.flag) {
                     transposition.TranspositionFlag.Exact => {
@@ -349,9 +349,7 @@ pub const Engine = struct {
         if (!in_check and node_type == NodeType.Other) {
             // NULL MOVE PRUNING
             // More: https://www.chessprogramming.org/Null_Move_Pruning
-            if (!is_null and depth > 1 + null_reduction
-                // do not if low material
-            and @popCount(board.colors[0] | board.colors[1]) > 8) {
+            if (!is_null and self.ply > 4 and depth > 1 + null_reduction and @popCount(board.colors[0] | board.colors[1]) > 8 and false) {
                 self.ply += 1;
                 board.makeNullMove(allocator);
                 var null_score = -self.negamax(
@@ -416,9 +414,6 @@ pub const Engine = struct {
             self.ply += 1;
             self.hash_history.append(allocator, board.state.zobrist_key) catch unreachable;
             movesfound += 1;
-
-            // Prefetch hash
-            // transposition.global_tt.prefetch(board.state.zobrist_key);
 
             // Evaluate the leaf
             var score: types.Score = undefined;

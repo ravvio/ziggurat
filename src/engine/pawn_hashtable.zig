@@ -15,18 +15,13 @@ const high_bytes: u64 = 0xFF_FF_FF_FF_00_00_00_00;
 pub const PT = struct {
     megabytes: usize,
     size: usize,
-    used: usize = 0,
     data: []PawnStructure,
 
     pub fn init(allocator: std.mem.Allocator, megabytes: usize) !PT {
         const structure_size = @sizeOf(PawnStructure);
         const size = @divTrunc(megabytes * 1024 * 1024, structure_size);
 
-        const tt = PT{
-            .megabytes = megabytes,
-            .size = size,
-            .data = try allocator.alloc(PawnStructure, size)
-        };
+        const tt = PT{ .megabytes = megabytes, .size = size, .data = try allocator.alloc(PawnStructure, size) };
         for (0..tt.data.len) |i| {
             tt.data[i] = PawnStructure{
                 .verification = 0,
@@ -41,21 +36,11 @@ pub const PT = struct {
     }
 
     pub fn clear(self: *PT) void {
-        self.used = 0;
         for (0..self.data.len) |i| {
             self.data[i] = PawnStructure{
                 .verification = 0,
                 .score = 0,
             };
-        }
-    }
-
-    /// Reports the occupancy of the table in permillis
-    pub fn occupancy(self: *PT) usize {
-        if (self.size > 0) {
-            return @divTrunc(1000 * self.used, self.size);
-        } else {
-            return 0;
         }
     }
 
@@ -74,16 +59,12 @@ pub const PT = struct {
             .verification = @truncate(pawn_key),
             .score = score,
         };
-        self.used += 1;
     }
 
     pub fn probe(self: *PT, pawn_key: u64) ?PawnStructure {
         const res = self.data[self.index(pawn_key)];
-        if (res.verification != 0) {
-            const ok = @as(u32, @truncate(pawn_key)) == @as(u32, @truncate(pawn_key));
-            if (ok) {
-                return res;
-            }
+        if (res.verification != 0 and res.verification == @as(u32, @truncate(pawn_key))) {
+            return res;
         }
         return null;
     }

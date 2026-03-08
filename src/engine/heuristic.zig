@@ -92,7 +92,7 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
 
     final += mobility_score;
     final += computeKingSafety(board, &white_targets, &black_targets);
-    // final += computePawnStructure(board);
+    final += computePawnStructure(board);
     return sign * final;
 }
 
@@ -141,35 +141,36 @@ pub fn computePawnStructure(board: *const chess.Board) types.Score {
     const white_pawns = board.pawns(Colors.white);
 
     var score: types.Score = 0;
-    var passed_b: usize = 0;
-    var passed_w: usize = 0;
 
     var black_pawns_it = black_pawns;
     while (black_pawns_it != 0) {
         const sq = chess.bitboard.pop(&black_pawns_it);
 
-        if (black_pawns & tables.double_pawn_masks[0][sq] == 0) {
-            score -= tables.double_pawn_value;
-            continue;
+        if (black_pawns & tables.isolated_pawn_masks[sq] != 0) {
+            score -= tables.isolated_pawn_score;
         }
-        if (white_pawns & tables.passed_pawn_masks[0][sq] == 0 and black_pawns & tables.double_pawn_masks[1][sq] == 0) {
-            passed_b += 1;
+        if (black_pawns & tables.double_pawn_masks[0][sq] != 0) {
+            score -= tables.double_pawn_score;
+        }
+        if (black_pawns & chess.tables.pawnAttacks(constants.Colors.white, sq) != 0) {
+            score -= tables.protected_pawn_scores[sq];
         }
     }
 
     var white_pawns_it = white_pawns;
     while (white_pawns_it != 0) {
         const sq = chess.bitboard.pop(&white_pawns_it);
-        if (white_pawns & tables.double_pawn_masks[1][sq] == 0) {
-            score += tables.double_pawn_value;
-            continue;
+
+        if (white_pawns & tables.isolated_pawn_masks[sq] != 0) {
+            score += tables.isolated_pawn_score;
         }
-        if (black_pawns & tables.passed_pawn_masks[1][sq] == 0 and white_pawns & tables.double_pawn_masks[0][sq] == 0) {
-            passed_w += 1;
+        if (white_pawns & tables.double_pawn_masks[1][sq] != 0) {
+            score += tables.double_pawn_score;
+        }
+        if (white_pawns & chess.tables.pawnAttacks(constants.Colors.black, sq) != 0) {
+            score += tables.protected_pawn_scores[sq];
         }
     }
-
-    score += tables.passed_pawn_values[passed_w] - tables.passed_pawn_values[passed_b];
 
     // Store score
     pawn_hashtable.global_pt.put(board.state.pawn_structure_key, score);

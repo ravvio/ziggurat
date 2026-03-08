@@ -110,9 +110,6 @@ pub fn run_eval(args: *std.process.ArgIterator) !void {
     } else {
         e.search(allocator, &board, false, depth);
     }
-
-    std.debug.print("\nBest: {f}\n", .{e.best_move});
-    std.debug.print("Eval: {d}\n", .{e.score});
 }
 
 pub fn main() !void {

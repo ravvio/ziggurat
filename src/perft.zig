@@ -77,23 +77,26 @@ test "perft startpos" {
     chess.tables.initAll();
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer gpa.deinit();
+    defer {
+        const deinit_status = gpa.deinit();
+        std.debug.assert(deinit_status == .ok);
+    }
     const allocator = gpa.allocator();
 
     var board = try chess.Board.fromFen(allocator, chess.constants.Fen.STARTPOS);
-    defer board.deinit();
+    defer board.deinit(allocator);
 
-    var res = perft(&board, true, 1);
+    var res = perft(allocator, &board, true, 1);
     try std.testing.expectEqual(20, res);
-    res = perft(&board, true, 2);
+    res = perft(allocator, &board, true, 2);
     try std.testing.expectEqual(400, res);
-    res = perft(&board, true, 3);
+    res = perft(allocator, &board, true, 3);
     try std.testing.expectEqual(8_902, res);
-    res = perft(&board, true, 4);
+    res = perft(allocator, &board, true, 4);
     try std.testing.expectEqual(197_281, res);
-    // res = perft(&board, 5);
+    // res = perft(allocator, &board, 5);
     // try std.testing.expectEqual(4_865_609, res);
-    // res = perft(&board, 6);
+    // res = perft(allocator, &board, 6);
     // try std.testing.expectEqual(119_060_324, res);
 }
 
@@ -103,22 +106,22 @@ test "perft kiwipete" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer {
         const deinit_status = gpa.deinit();
-        if (deinit_status == .leak) @panic("Leak detected");
+        std.debug.assert(deinit_status == .ok);
     }
     const allocator = gpa.allocator();
 
     var board = try chess.Board.fromFen(allocator, chess.constants.Fen.KIWIPETE);
-    defer board.deinit();
+    defer board.deinit(allocator);
 
-    var res = perft(&board, true, 1);
+    var res = perft(allocator, &board, true, 1);
     try std.testing.expectEqual(48, res);
-    res = perft(&board, true, 2);
+    res = perft(allocator, &board, true, 2);
     try std.testing.expectEqual(2_039, res);
-    res = perft(&board, true, 3);
+    res = perft(allocator, &board, true, 3);
     try std.testing.expectEqual(97_862, res);
-    res = perft(&board, true, 4);
+    res = perft(allocator, &board, true, 4);
     try std.testing.expectEqual(4_085_603, res);
-    // res = perft(&board, 5);
+    // res = perft(allocator, &board, 5);
     // try std.testing.expectEqual(193_690_690, res);
 }
 
@@ -133,12 +136,12 @@ test "broken position" {
     const allocator = gpa.allocator();
 
     var board = try chess.Board.fromFen(allocator, "rnbq1bnr/ppppp3/5k2/6p1/6p1/1P2P2P/P1PP4/RNBQKBNR w - - 0 9");
-    defer board.deinit();
+    defer board.deinit(allocator);
 
-    var res = perft(&board, true, 2);
+    var res = perft(allocator, &board, true, 2);
     try std.testing.expectEqual(750, res);
-    res = perft(&board, true, 4);
+    res = perft(allocator, &board, true, 4);
     try std.testing.expectEqual(589_188, res);
-    // res = perft(&board, true, 6);
+    // res = perft(allocator, &board, true, 6);
     // try std.testing.expectEqual(490_634_943, res);
 }

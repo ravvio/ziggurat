@@ -215,6 +215,7 @@ pub const Board = struct {
         const to = try Square.fromAlgebraic(str[2..4]);
         const promotion = if (str.len == 5) try pieces.from(str[4]) else pieces.NONE;
 
+
         if (promotion != pieces.NONE and !pieces.isPromotionPiece(promotion)) {
             return ChessError.InvalidPromotionPiece;
         }

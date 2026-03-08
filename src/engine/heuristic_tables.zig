@@ -190,11 +190,19 @@ pub const safety: [100]types.Score = .{
     500, 500, 500, 500, 500, 500, 500, 500, 500, 500,
 };
 
-pub const passed_pawn_values: [9]types.Score = .{
-    0, 50, 60, 65, 70, 73, 75, 77, 79
+pub const protected_pawn_scores: [64]types.Score = .{
+    0, 0, 0,  0,  0,   0, 0, 0,
+    8, 8, 12, 14, 14, 12, 8, 8,
+    8, 8, 12, 14, 14, 12, 8, 8,
+    8, 8, 12, 14, 14, 12, 8, 8,
+    8, 8, 12, 14, 14, 12, 8, 8,
+    8, 8, 12, 14, 14, 12, 8, 8,
+    8, 8, 12, 14, 14, 12, 8, 8,
+    0, 0,  0,  0,  0,  0, 0, 0,
 };
 
-pub const double_pawn_value: types.Score = -15;
+pub const double_pawn_score: types.Score = -8;
+pub const isolated_pawn_score: types.Score = -6;
 
 pub const vec_mul_2 = @Vector(2, u64){ 2, 2 };
 pub const vec_mul_3 = @Vector(2, u64){ 3, 3 };
@@ -217,7 +225,7 @@ pub const pawn_files: [8]u64 = .{
     bitboard.FILE_G | bitboard.FILE_H,
 };
 
-pub const passed_pawn_masks: [2][64]u64 = blk: {
+pub const double_pawn_masks: [2][64]u64 = blk: {
     var res: [2][64]u64 = undefined;
 
     for (chess.Square.ALL_SQUARES) |sq| {
@@ -235,33 +243,24 @@ pub const passed_pawn_masks: [2][64]u64 = blk: {
             }
         }
 
-        res[0][sq.x] = pawn_files[file] & rank_mask_b;
-        res[1][sq.x] = pawn_files[file] & rank_mask_w;
+        res[0][sq.x] = bitboard.FILES[file] & rank_mask_b;
+        res[1][sq.x] = bitboard.FILES[file] & rank_mask_w;
     }
 
     break :blk res;
 };
 
-pub const double_pawn_masks: [2][64]u64 = blk: {
-    var res: [2][64]u64 = undefined;
+pub const isolated_pawn_masks: [64]u64 = blk: {
+    var res: [64]u64 = undefined;
 
     for (chess.Square.ALL_SQUARES) |sq| {
         const file = sq.file();
-        const rank = sq.rank();
-
-        var rank_mask_b = 0;
-        var rank_mask_w = 0;
-
-        for (0..8) |r| {
-            if (r < rank) {
-                rank_mask_w |= bitboard.RANKS[r];
-            } else if (r > rank) {
-                rank_mask_b |= bitboard.RANKS[r];
-            }
+        if (file != 0) {
+            res[sq.x] |= bitboard.FILES[file - 1];
         }
-
-        res[0][sq.x] = bitboard.FILES[file] & rank_mask_b;
-        res[1][sq.x] = bitboard.FILES[file] & rank_mask_w;
+        if (file != 7) {
+            res[sq.x] |= bitboard.FILES[file + 1];
+        }
     }
 
     break :blk res;

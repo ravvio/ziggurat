@@ -108,32 +108,19 @@ pub const TT = struct {
         return @truncate((zobrist_key >> 32) % self.size);
     }
 
-    pub fn prefetch(self: *TT, zobrist_key: u64) void {
-        @prefetch(
-            &self.data[self.index(zobrist_key)],
-            .{
-                .rw = .read,
-                .locality = 1,
-                .cache = .data,
-            },
-        );
-    }
-
     pub fn put(
         self: *TT,
         zobrist_key: u64,
         depth: u8,
-        move_: chess.ChessMove,
+        move: chess.ChessMove,
         score: types.Score,
         flag: TranspositionFlag,
     ) void {
-        var move = move_;
-        move.removeSortScore();
         self.data[self.index(zobrist_key)].store(
             Transposition{
                 .depth = depth,
                 .verification = @truncate(zobrist_key),
-                .move = @truncate(move.x),
+                .move = @truncate(move.withoutSortScore().x),
                 .score = score,
                 .flag = flag,
             },

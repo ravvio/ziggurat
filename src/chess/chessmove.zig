@@ -101,7 +101,6 @@ pub const ChessMove = struct {
 
     pub fn removeSortScore(m: *ChessMove) void {
         m.x &= bits.no_sort_mask;
-        std.debug.assert(m.getSortScore() == 0);
     }
 
     pub fn withoutSortScore(m: *const ChessMove) ChessMove {
