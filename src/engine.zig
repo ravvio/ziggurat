@@ -9,12 +9,7 @@ const tables = @import("./engine/heuristic_tables.zig");
 const chess = @import("chess.zig");
 
 test "pawn_structure_count" {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer {
-        const deinit_status = gpa.deinit();
-        std.debug.assert(deinit_status == .ok);
-    }
-    const allocator = gpa.allocator();
+    const allocator = std.testing.allocator;
 
     var board = try chess.Board.fromFen(allocator, "2b5/4Bpbp/p6r/p1Np4/2p2P1P/3P1P1p/1k6/1B3R1K w - - 0 13");
     defer board.deinit(allocator);

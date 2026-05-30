@@ -16,7 +16,7 @@ pub const PerftBench = struct {
         };
     }
 
-    pub fn run(self: PerftBench, allocator: std.mem.Allocator) void {
+    pub fn run(self: *PerftBench, allocator: std.mem.Allocator) void {
         var board = chess.Board.fromFen(allocator, self.fen) catch {
             @panic("could not create bench board form fen");
         };

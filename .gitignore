@@ -1,6 +1,7 @@
 
 .zig-cache/*
 zig-out/*
+zig-pkg/*
 
 # Perf results
 perf.data*

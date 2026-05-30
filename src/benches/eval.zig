@@ -3,20 +3,23 @@ const chess = @import("../chess.zig");
 const engine = @import("../engine.zig");
 
 pub const EvalBench = struct {
+    io: std.Io,
     depth: u8,
     fen: []const u8,
 
     pub fn init(
+        io: std.Io,
         fen: []const u8,
         depth: u8,
     ) EvalBench {
         return .{
+            .io = io,
             .depth = depth,
             .fen = fen,
         };
     }
 
-    pub fn run(self: EvalBench, allocator: std.mem.Allocator) void {
+    pub fn run(self: *EvalBench, allocator: std.mem.Allocator) void {
         var board = chess.Board.fromFen(allocator, self.fen) catch {
             @panic("could not create bench board form fen");
         };
@@ -31,9 +34,9 @@ pub const EvalBench = struct {
         engine.pawn_hashtable.global_pt.clear();
 
         if (board.state.current_side) {
-            e.search(allocator, &board, true, self.depth);
+            e.search(allocator, self.io, &board, true, self.depth);
         } else {
-            e.search(allocator, &board, false, self.depth);
+            e.search(allocator, self.io, &board, false, self.depth);
         }
     }
 };

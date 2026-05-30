@@ -6,7 +6,7 @@ const ChessMove = @import("chessmove.zig").ChessMove;
 const constants = @import("constants.zig");
 
 fn initCastling() [64]CastlingRights {
-    var all = [_]CastlingRights{CastlingRights.ALL} ** 64;
+    var all: [64]CastlingRights = @splat(CastlingRights.ALL);
     all[Square.A1.x].x ^= CastlingRights.WQ.x;
     all[Square.E1.x].x ^= CastlingRights.WK.x | CastlingRights.WQ.x;
     all[Square.H1.x].x ^= CastlingRights.WK.x;

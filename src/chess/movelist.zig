@@ -100,7 +100,6 @@ pub const Movelist = struct {
         }
         for (0..self.count - 1) |i| {
             if (self.list[i].getSortScore() > self.list[self.count - 1].getSortScore()) {
-                if (self.list[i].getSortScore() == 255) {}
                 self.swap(i, self.count - 1);
             }
         }

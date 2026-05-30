@@ -42,8 +42,8 @@ pub const ChessMove = struct {
 
     pub fn format(
         this: @This(),
-        writer: *std.io.Writer,
-    ) std.io.Writer.Error!void {
+        writer: *std.Io.Writer,
+    ) std.Io.Writer.Error!void {
         try writer.print("{f}{f}{s}", .{
             Square.new(this.from()),
             Square.new(this.to()),

@@ -1,34 +1,27 @@
 const zbench = @import("zbench");
 const std = @import("std");
 const chess = @import("chess.zig");
-const testing = std.testing;
 const engine = @import("engine.zig");
 const ziggurat = @import("root.zig");
 
 const perft = @import("./benches/perft.zig");
 const eval = @import("./benches/eval.zig");
 
-pub fn main() !void {
-    ziggurat.initAll();
+pub fn main(init: std.process.Init) !void {
+    const stdout: std.Io.File = .stdout();
+    const io = init.io;
+    const allocator = init.gpa;
 
-    var buf: [1024]u8 = undefined;
-    var stdout = std.fs.File.stdout().writer(&buf);
+    ziggurat.initAll();
+    try engine.transposition.initGlobalTranspositionTable(allocator, 64);
+    try engine.pawn_hashtable.initGlobalPawnTable(allocator, 4);
+    defer engine.transposition.global_tt.deinit(allocator);
+    defer engine.pawn_hashtable.global_pt.deinit(allocator);
 
     var bench = zbench.Benchmark.init(std.heap.page_allocator, .{
         .time_budget_ns = 5e9,
     });
     defer bench.deinit();
-
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer {
-        const deinit_status = gpa.deinit();
-        if (deinit_status == .leak) @panic("Leak detected");
-    }
-    const allocator = gpa.allocator();
-    try engine.transposition.initGlobalTranspositionTable(allocator, 64);
-    try engine.pawn_hashtable.initGlobalPawnTable(allocator, 4);
-    defer engine.transposition.global_tt.deinit(allocator);
-    defer engine.pawn_hashtable.global_pt.deinit(allocator);
 
     try bench.addParam(
         "Perft2 startpos",
@@ -58,46 +51,44 @@ pub fn main() !void {
 
     try bench.addParam(
         "Eval6 startpos",
-        &eval.EvalBench.init(chess.constants.Fen.STARTPOS, 6),
+        &eval.EvalBench.init(io, chess.constants.Fen.STARTPOS, 6),
         .{},
     );
     try bench.addParam(
         "Eval8 startpos",
-        &eval.EvalBench.init(chess.constants.Fen.STARTPOS, 8),
+        &eval.EvalBench.init(io, chess.constants.Fen.STARTPOS, 8),
         .{},
     );
     try bench.addParam(
         "Eval10 startpos",
-        &eval.EvalBench.init(chess.constants.Fen.STARTPOS, 10),
+        &eval.EvalBench.init(io, chess.constants.Fen.STARTPOS, 10),
         .{},
     );
     try bench.addParam(
         "Eval12 startpos",
-        &eval.EvalBench.init(chess.constants.Fen.STARTPOS, 12),
+        &eval.EvalBench.init(io, chess.constants.Fen.STARTPOS, 12),
         .{},
     );
     try bench.addParam(
         "Eval6 kiwipete",
-        &eval.EvalBench.init(chess.constants.Fen.KIWIPETE, 6),
+        &eval.EvalBench.init(io, chess.constants.Fen.KIWIPETE, 6),
         .{},
     );
     try bench.addParam(
         "Eval8 kiwipete",
-        &eval.EvalBench.init(chess.constants.Fen.KIWIPETE, 8),
+        &eval.EvalBench.init(io, chess.constants.Fen.KIWIPETE, 8),
         .{},
     );
     try bench.addParam(
         "Eval10 startpos",
-        &eval.EvalBench.init(chess.constants.Fen.KIWIPETE, 10),
+        &eval.EvalBench.init(io, chess.constants.Fen.KIWIPETE, 10),
         .{},
     );
     try bench.addParam(
         "Eval12 startpos",
-        &eval.EvalBench.init(chess.constants.Fen.KIWIPETE, 12),
+        &eval.EvalBench.init(io, chess.constants.Fen.KIWIPETE, 12),
         .{},
     );
 
-    try stdout.interface.writeAll("\n");
-    try bench.run(&stdout.interface);
-    try stdout.interface.flush();
+    try bench.run(io, stdout);
 }

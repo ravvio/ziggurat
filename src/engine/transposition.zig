@@ -22,7 +22,7 @@ pub const Transposition = struct {
 
 const bucket_size: u8 = 4;
 const Bucket = struct {
-    content: [bucket_size]Transposition = std.mem.zeroes([bucket_size]Transposition),
+    content: [bucket_size]Transposition = @splat(Transposition{}),
 
     pub fn store(self: *Bucket, item: Transposition, used: *usize) void {
         // Find the item in the bucket that has the highest depth
@@ -43,7 +43,7 @@ const Bucket = struct {
         }
         const high = &self.content[index];
         // Verification is 0 so the entry is still unused
-        if (high.verification == 0) {
+        if (unused) {
             used.* += 1;
         }
         high.* = item;
@@ -53,11 +53,13 @@ const Bucket = struct {
         for (self.content) |item| {
             if (item.verification == verification) {
                 return item;
-            } else if (item.verification == 0) {
-                return null;
             }
         }
         return null;
+    }
+
+    pub fn clear(self: *Bucket) void {
+        self.content = @splat(Transposition{});
     }
 };
 
@@ -89,7 +91,7 @@ pub const TT = struct {
     pub fn clear(self: *TT) void {
         self.used = 0;
         for (0..self.data.len) |i| {
-            self.data[i] = Bucket{};
+            self.data[i].clear();
         }
     }
 

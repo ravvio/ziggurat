@@ -668,3 +668,24 @@ Eval8 kiwipete         65       4.947s         76.12ms ± 3.313ms     (73.545ms 
 Eval10 startpos        14       4.816s         344.07ms ± 4.618ms    (336.466ms ... 351.788ms)    347.782ms  351.788ms  351.788ms
 Eval12 startpos        1        2.641s         2.641s ± 0ns          (2.641s ... 2.641s)          2.641s     2.641s     2.641s
 ```
+
+### v0.8.3
+- Fix bugs and update zig to 0.17
+
+```
+benchmark         runs     total time     time/run (avg ± σ)    (min ... max)                p75        p99        p995
+------------------------------------------------------------------------------------------------------------------------------
+Perft2 startpos   100000   1.145s         11.458us ± 4.631us    (10.18us ... 307.682us)      11.344us   14.831us   18.971us
+Perft4 startpos   1286     5.009s         3.895ms ± 47.825us    (3.808ms ... 4.816ms)        3.917ms    4.019ms    4.029ms
+Perft6 startpos   2        4.702s         2.351s ± 2.868ms      (2.349s ... 2.353s)          2.353s     2.353s     2.353s
+Perft2 kiwipete   100000   4.163s         41.63us ± 3.398us     (39.627us ... 147.598us)     41.527us   57.287us   63.886us
+Perft4 kiwipete   63       4.968s         78.871ms ± 438.435us  (78.425ms ... 80.409ms)      78.914ms   80.409ms   80.409ms
+Eval6 startpos    457      4.986s         10.911ms ± 311.467us  (10.743ms ... 12.496ms)      10.847ms   12.277ms   12.303ms
+Eval8 startpos    231      4.997s         21.634ms ± 969.2us    (21.127ms ... 27.51ms)       21.432ms   26.525ms   26.671ms
+Eval10 startpos   50       4.993s         99.867ms ± 4.299ms    (96.606ms ... 111.851ms)     102.671ms  111.851ms  111.851ms
+Eval12 startpos   6        4.371s         728.535ms ± 6.436ms   (720.421ms ... 736.274ms)    732.553ms  736.274ms  736.274ms
+Eval6 kiwipete    168      4.978s         29.635ms ± 814.71us   (29.176ms ... 33.587ms)      29.533ms   33.272ms   33.587ms
+Eval8 kiwipete    59       4.951s         83.92ms ± 3.239ms     (81.793ms ... 94.658ms)      84.788ms   94.658ms   94.658ms
+Eval10 startpos   13       4.699s         361.492ms ± 5.187ms   (356.594ms ... 369.184ms)    366.399ms  369.184ms  369.184ms
+Eval12 startpos   1        2.579s         2.579s ± 0ns          (2.579s ... 2.579s)          2.579s     2.579s     2.579s
+```

@@ -10,7 +10,7 @@ const CommandError = error{
     InvalidArgument,
 };
 
-pub fn run_perft(args: *std.process.ArgIterator) !void {
+pub fn run_perft(allocator: std.mem.Allocator, args: *std.process.Args.Iterator) !void {
     const depth_str = args.next();
     if (depth_str == null) {
         return CommandError.MissingArgumentError;
@@ -26,13 +26,6 @@ pub fn run_perft(args: *std.process.ArgIterator) !void {
     if (std.mem.eql(u8, fen.?, "startpos")) {
         fen = chess.constants.Fen.STARTPOS;
     }
-
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer {
-        const deinit_status = gpa.deinit();
-        if (deinit_status == .leak) @panic("Leak detected");
-    }
-    const allocator = gpa.allocator();
 
     var board = try chess.Board.fromFen(allocator, fen.?);
     defer board.deinit(allocator);
@@ -59,7 +52,7 @@ pub fn run_perft(args: *std.process.ArgIterator) !void {
     }
 }
 
-pub fn run_eval(args: *std.process.ArgIterator) !void {
+pub fn run_eval(allocator: std.mem.Allocator, io: std.Io, args: *std.process.Args.Iterator) !void {
     const depth_str = args.next();
     if (depth_str == null) {
         return CommandError.MissingArgumentError;
@@ -75,13 +68,6 @@ pub fn run_eval(args: *std.process.ArgIterator) !void {
     if (std.mem.eql(u8, fen.?, "startpos")) {
         fen = chess.constants.Fen.STARTPOS;
     }
-
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer {
-        const deinit_status = gpa.deinit();
-        if (deinit_status == .leak) @panic("Leak detected");
-    }
-    const allocator = gpa.allocator();
 
     var board = try chess.Board.fromFen(allocator, fen.?);
     defer board.deinit(allocator);
@@ -106,19 +92,18 @@ pub fn run_eval(args: *std.process.ArgIterator) !void {
     defer e.deinit(allocator);
 
     if (color) {
-        e.search(allocator, &board, true, depth);
+        e.search(allocator, io, &board, true, depth);
     } else {
-        e.search(allocator, &board, false, depth);
+        e.search(allocator, io, &board, false, depth);
     }
 }
 
-pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer {
-        const deinit_status = gpa.deinit();
-        if (deinit_status == .leak) @panic("Leak detected");
-    }
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const io = init.io;
 
     ziggurat.initAll();
     try engine.transposition.initGlobalTranspositionTable(allocator, 64);
@@ -126,18 +111,17 @@ pub fn main() !void {
     defer engine.transposition.global_tt.deinit(allocator);
     defer engine.pawn_hashtable.global_pt.deinit(allocator);
 
-    var args = try std.process.argsWithAllocator(allocator);
-    defer args.deinit();
+    var args = init.minimal.args.iterate();
     _ = args.next();
     const subcommand = args.next();
 
     if (subcommand == null) {
         var uci = try engine.Uci.init(allocator);
         defer uci.deinit(allocator);
-        try uci.run(allocator);
+        try uci.run(allocator, io);
     } else if (std.mem.eql(u8, subcommand.?, "perft")) {
-        try run_perft(&args);
+        try run_perft(allocator, &args);
     } else if (std.mem.eql(u8, subcommand.?, "eval")) {
-        try run_eval(&args);
+        try run_eval(allocator, io, &args);
     }
 }

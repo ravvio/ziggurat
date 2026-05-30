@@ -20,7 +20,7 @@ pub const Board = struct {
 
     colors: [2]u64 = std.mem.zeroes([2]u64),
 
-    pieces: [64]usize = [1]usize{constants.pieces.NONE} ** 64,
+    pieces: [64]usize = @splat(constants.pieces.NONE),
 
     state: GameState,
     history: std.ArrayList(GameState),
@@ -43,7 +43,7 @@ pub const Board = struct {
         if (split == null) {
             return ChessError.InvalidFen;
         }
-        self.pieces = [1]usize{constants.pieces.NONE} ** 64;
+        self.pieces = @splat(constants.pieces.NONE);
         self.boards = std.mem.zeroes([2][6]u64);
         var index: usize = 0;
         for (split.?) |c| {
@@ -351,11 +351,25 @@ pub const Board = struct {
 
             if (move.enPassant()) {
                 // The move was an en passant, remove opponent pawn
-                b.removePiece(!color, constants.pieces.PAWN, to ^ 8);
+                std.debug.assert(b.state.en_passant != null);
+                if (color) {
+                    b.removePiece(!color, constants.pieces.PAWN, b.state.en_passant.?.x + 8);
+                } else {
+                    b.removePiece(!color, constants.pieces.PAWN, b.state.en_passant.?.x - 8);
+                }
                 b.removeEnPassant();
             } else if (move.doubleStep()) {
-                b.setEnPassant(to ^ 8);
-            } else if (b.state.en_passant != null) {
+                if (b.state.en_passant != null) {
+                    b.removeEnPassant();
+                }
+                if (color) {
+                    b.setEnPassant(to + 8);
+                } else {
+                    b.setEnPassant(to - 8);
+                }
+            }
+
+            if (b.state.en_passant != null) {
                 b.removeEnPassant();
             }
         }
@@ -392,7 +406,12 @@ pub const Board = struct {
         if (move.enPassant()) {
             // If it was an enpassant, put the opponent pawn back
             std.debug.assert(piece == constants.pieces.PAWN);
-            b.undoRemovePiece(!color, constants.pieces.PAWN, to ^ 8);
+            std.debug.assert(b.state.en_passant != null);
+            if (color) {
+                b.undoRemovePiece(!color, constants.pieces.PAWN, b.state.en_passant.?.x + 8);
+            } else {
+                b.undoRemovePiece(!color, constants.pieces.PAWN, b.state.en_passant.?.x - 8);
+            }
         } else if (capture != constants.pieces.NONE) {
             // If a piece was captured put it back
             b.undoRemovePiece(!color, capture, to);
@@ -782,14 +801,9 @@ fn addToMovelist(
 }
 
 test "parse moves" {
-    tables.initAll();
+    const allocator = std.testing.allocator;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer {
-        const deinit_status = gpa.deinit();
-        if (deinit_status == .leak) std.debug.assert(false);
-    }
-    const allocator = gpa.allocator();
+    tables.initAll();
 
     var board = try Board.fromFen(allocator, constants.Fen.STARTPOS);
     defer board.deinit(allocator);
@@ -804,4 +818,52 @@ test "parse moves" {
             board.makeMove(allocator, move, false);
         }
     }
+}
+
+test "swap" {
+    const allocator = std.testing.allocator;
+
+    tables.initAll();
+
+    var board = try Board.fromFen(allocator, constants.Fen.STARTPOS);
+    defer board.deinit(allocator);
+    const z0 = board.state.zobrist_key;
+
+    board.swapSide();
+    try std.testing.expect(board.state.zobrist_key != z0);
+    board.swapSide();
+    try std.testing.expectEqual(board.state.zobrist_key, z0);
+}
+
+test "en passant" {
+    const allocator = std.testing.allocator;
+
+    tables.initAll();
+
+    var board = try Board.fromFen(allocator, constants.Fen.STARTPOS);
+    defer board.deinit(allocator);
+    const z0 = board.state.zobrist_key;
+
+    try std.testing.expect(board.state.en_passant == null);
+
+    board.makeMove(allocator, try board.parseMove("e2e4"), true);
+    try std.testing.expectEqual(board.state.en_passant.?.x, Square.E3.x);
+    const z1 = board.state.zobrist_key;
+    try std.testing.expect(z1 != z0);
+
+    board.makeMove(allocator, try board.parseMove("e7e5"), false);
+    try std.testing.expectEqual(board.state.en_passant.?.x, Square.E6.x);
+    const z2 = board.state.zobrist_key;
+    try std.testing.expect(z2 != z1);
+
+    board.unmakeMove(false);
+    try std.testing.expectEqual(board.state.en_passant.?.x, Square.E3.x);
+    const z3 = board.state.zobrist_key;
+    try std.testing.expectEqual(z3, z1);
+    try std.testing.expect(z3 != z2 and z3 != z0);
+
+    board.unmakeMove(true);
+    try std.testing.expect(board.state.en_passant == null);
+    const z4 = board.state.zobrist_key;
+    try std.testing.expectEqual(z4, z0);
 }

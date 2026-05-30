@@ -32,11 +32,11 @@ pub const Uci = struct {
 
     /// Main loop inspired from Avalanche
     /// https://github.com/SnowballSH/Avalanche
-    pub fn run(self: *@This(), allocator: std.mem.Allocator) !void {
+    pub fn run(self: *@This(), allocator: std.mem.Allocator, io: std.Io) !void {
         var inbuf: [4 * 1024]u8 = undefined;
-        var stdin = std.fs.File.stdin().readerStreaming(&inbuf);
+        var stdin = std.Io.File.stdin().readerStreaming(io, &inbuf);
         var outbuf: [4 * 1024]u8 = undefined;
-        var stdout = std.fs.File.stdout().writerStreaming(&outbuf);
+        var stdout = std.Io.File.stdout().writerStreaming(io, &outbuf);
 
         while (true) {
             const in = try stdin.interface.takeDelimiterExclusive('\n');
@@ -85,7 +85,7 @@ pub const Uci = struct {
             // Ask for idetification
             else if (std.mem.eql(u8, cmd.?, "uci")) {
                 _ = try stdout.interface.write(
-                    \\id name ziggurat_0.8.2
+                    \\id name ziggurat_0.8.3
                     \\id author Alessio Raviola <alessio.raviola.98@gmail.com>
                     \\
                 );
@@ -163,7 +163,7 @@ pub const Uci = struct {
                 self.search_thread = try std.Thread.spawn(
                     .{ .stack_size = 64 * 1024 * 1024 },
                     startSearch,
-                    .{ allocator, &self.engine, &self.board, movetime, max_depth },
+                    .{ allocator, io, &self.engine, &self.board, movetime, max_depth },
                 );
             }
         }
@@ -295,6 +295,7 @@ pub const Uci = struct {
 
 fn startSearch(
     allocator: std.mem.Allocator,
+    io: std.Io,
     engine: *Engine,
     b: *chess.Board,
     movetime: u64,
@@ -305,8 +306,8 @@ fn startSearch(
     engine.max_time = movetime;
 
     if (b.state.current_side) {
-        engine.search(allocator, b, true, max_depth);
+        engine.search(allocator, io, b, true, max_depth);
     } else {
-        engine.search(allocator, b, false, max_depth);
+        engine.search(allocator, io, b, false, max_depth);
     }
 }

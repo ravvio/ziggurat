@@ -78,7 +78,6 @@ pub const Square = struct {
         Square.new(63),
     };
 
-    // White side squares that are important for castling
     pub const A1 = Square.new(56);
     pub const B1 = Square.new(57);
     pub const C1 = Square.new(58);
@@ -88,7 +87,60 @@ pub const Square = struct {
     pub const G1 = Square.new(62);
     pub const H1 = Square.new(63);
 
-    // Black side squares that are important for castling
+    pub const A2 = Square.new(48);
+    pub const B2 = Square.new(49);
+    pub const C2 = Square.new(50);
+    pub const D2 = Square.new(51);
+    pub const E2 = Square.new(52);
+    pub const F2 = Square.new(53);
+    pub const G2 = Square.new(54);
+    pub const H2 = Square.new(55);
+
+    pub const A3 = Square.new(40);
+    pub const B3 = Square.new(41);
+    pub const C3 = Square.new(42);
+    pub const D3 = Square.new(43);
+    pub const E3 = Square.new(44);
+    pub const F3 = Square.new(45);
+    pub const G3 = Square.new(46);
+    pub const H3 = Square.new(47);
+
+    pub const A4 = Square.new(32);
+    pub const B4 = Square.new(33);
+    pub const C4 = Square.new(34);
+    pub const D4 = Square.new(35);
+    pub const E4 = Square.new(36);
+    pub const F4 = Square.new(37);
+    pub const G4 = Square.new(38);
+    pub const H4 = Square.new(39);
+
+    pub const A5 = Square.new(24);
+    pub const B5 = Square.new(25);
+    pub const C5 = Square.new(26);
+    pub const D5 = Square.new(27);
+    pub const E5 = Square.new(28);
+    pub const F5 = Square.new(29);
+    pub const G5 = Square.new(30);
+    pub const H5 = Square.new(31);
+
+    pub const A6 = Square.new(16);
+    pub const B6 = Square.new(17);
+    pub const C6 = Square.new(18);
+    pub const D6 = Square.new(19);
+    pub const E6 = Square.new(20);
+    pub const F6 = Square.new(21);
+    pub const G6 = Square.new(22);
+    pub const H6 = Square.new(23);
+
+    pub const A7 = Square.new(8);
+    pub const B7 = Square.new(9);
+    pub const C7 = Square.new(10);
+    pub const D7 = Square.new(11);
+    pub const E7 = Square.new(12);
+    pub const F7 = Square.new(13);
+    pub const G7 = Square.new(14);
+    pub const H7 = Square.new(15);
+
     pub const A8 = Square.new(0);
     pub const B8 = Square.new(1);
     pub const C8 = Square.new(2);
@@ -196,8 +248,8 @@ pub const Square = struct {
 
     pub fn format(
         this: @This(),
-        writer: *std.io.Writer,
-    ) !void {
+        writer: *std.Io.Writer,
+    ) std.Io.Writer.Error!void {
         try writer.print("{c}{c}", .{
             fileToAlgebraic(@truncate(this.file())),
             rankToAlgebraic(@truncate(this.rank())),

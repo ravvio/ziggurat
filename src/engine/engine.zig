@@ -56,6 +56,9 @@ const lmr_depths: [2][64][64]u8 = blk: {
 
 /// The Engine is the component responsible for finding the best move
 pub const Engine = struct {
+    /// Clock
+    clock: std.Io.Clock = std.Io.Clock.real,
+
     /// Should the engine not emit uci info
     quiet: bool = false,
     /// Maximum time in milliseconds
@@ -67,9 +70,9 @@ pub const Engine = struct {
     searching: bool = false,
     /// If the engine should stop as soon as possible
     stop: bool = false,
+    // Start of the search timestamp
+    start_search_timestamp: std.Io.Timestamp = std.Io.Timestamp.zero,
 
-    /// Timer from the start of the search
-    search_timer: std.time.Timer = undefined,
     /// Number of nodes searched
     nodes: usize = 0,
     /// Depth of iterative deepening reached
@@ -118,8 +121,12 @@ pub const Engine = struct {
         self.hash_history.deinit(allocator);
     }
 
-    fn shouldStop(self: *Engine) bool {
-        const current_time = self.search_timer.read() / std.time.ns_per_ms;
+    pub fn searchTime(self: *Engine, io: std.Io) i64 {
+        return self.start_search_timestamp.durationTo(self.clock.now(io)).toMilliseconds();
+    }
+
+    fn shouldStop(self: *Engine, io: std.Io) bool {
+        const current_time = self.searchTime(io);
         return self.stop or current_time > @min(self.max_time, self.search_time);
     }
 
@@ -133,12 +140,13 @@ pub const Engine = struct {
     pub fn search(
         self: *Engine,
         allocator: std.mem.Allocator,
+        io: std.Io,
         board: *chess.Board,
         comptime color: bool,
         max_depth: ?u8,
     ) void {
         var bufout: [1024]u8 = undefined;
-        var stdout = std.fs.File.stdout().writer(&bufout);
+        var stdout = std.Io.File.stdout().writerStreaming(io, &bufout);
 
         self.reset();
 
@@ -151,7 +159,7 @@ pub const Engine = struct {
         self.searching = true;
 
         // Start a timer for reporting time taken
-        self.search_timer = std.time.Timer.start() catch unreachable;
+        self.start_search_timestamp = self.clock.now(io);
 
         const max: u8 = if (max_depth) |max| @max(max, 1) else max_ply - 2;
         var tdepth: u8 = 1;
@@ -168,6 +176,7 @@ pub const Engine = struct {
 
                 score = self.negamax(
                     allocator,
+                    io,
                     board,
                     color,
                     NodeType.Root,
@@ -196,7 +205,7 @@ pub const Engine = struct {
                     tdepth,
                     self.seldepth,
                     self.nodes,
-                    self.search_timer.read() / std.time.ns_per_ms,
+                    self.searchTime(io),
                     transposition.global_tt.occupancy(),
                 }) catch unreachable;
 
@@ -218,7 +227,7 @@ pub const Engine = struct {
                 stdout.interface.flush() catch unreachable;
             }
 
-            if (self.shouldStop()) {
+            if (self.shouldStop(io)) {
                 break :deepening;
             }
         }
@@ -242,6 +251,7 @@ pub const Engine = struct {
     pub fn negamax(
         self: *Engine,
         allocator: std.mem.Allocator,
+        io: std.Io,
         board: *chess.Board,
         comptime color: bool,
         comptime node_type: NodeType,
@@ -266,7 +276,7 @@ pub const Engine = struct {
         // === Preparation
         // - Check if we should stop
         // This is done every few nodes
-        if (node_type != NodeType.Root and self.nodes & 2047 == 0 and self.shouldStop()) {
+        if (node_type != NodeType.Root and self.nodes & 2047 == 0 and self.shouldStop(io)) {
             self.stop = true;
             return 0;
         }
@@ -285,6 +295,7 @@ pub const Engine = struct {
         if (depth == 0) {
             return self.quiescence(
                 allocator,
+                io,
                 board,
                 color,
                 alpha_,
@@ -354,6 +365,7 @@ pub const Engine = struct {
                 board.makeNullMove(allocator);
                 var null_score = -self.negamax(
                     allocator,
+                    io,
                     board,
                     !color,
                     NodeType.Other,
@@ -397,6 +409,21 @@ pub const Engine = struct {
 
         // Iterate all moves
         while (movelist.pick()) |move| {
+            // Assert that the first move is the hashmove if we found one
+            if (hashmove != 0 and movesfound == 0 and move.withoutSortScore().x != hashmove) {
+                const m = chess.ChessMove{ .x = hashmove};
+                chess.bitboard.debugPrint(board.pawns(true));
+                chess.bitboard.debugPrint(board.pawns(false));
+                std.debug.print("{} to move", .{!board.state.current_side});
+                std.debug.print("Hashmove {f} ({} c {}), Move {f} ({} c {}) - En {?}\n", .{
+                    m, m.piece(), m.capture(), move, move.piece(), move.capture(), board.state.en_passant});
+
+                for (0..movelist.count) |i| {
+                    const mo = movelist.list[i];
+                    std.debug.print("{f} - {}\n", .{mo, mo.getSortScore()});
+                }
+            }
+            std.debug.assert(hashmove == 0 or movesfound > 0 or move.withoutSortScore().x == hashmove);
 
             // Make the move
             board.makeMove(allocator, move, color);
@@ -406,9 +433,6 @@ pub const Engine = struct {
                 board.unmakeMove(color);
                 continue;
             }
-
-            // Assert that the first move is the hashmove if we found one
-            std.debug.assert(hashmove == 0 or movesfound > 0 or move.withoutSortScore().x == hashmove);
 
             // Increment ply, add to history, increase moves found
             self.ply += 1;
@@ -429,6 +453,7 @@ pub const Engine = struct {
             if (node_type != NodeType.Other and movesfound == 1) {
                 score = -self.negamax(
                     allocator,
+                    io,
                     board,
                     !color,
                     NodeType.PV,
@@ -455,6 +480,7 @@ pub const Engine = struct {
 
                     score = -self.negamax(
                         allocator,
+                        io,
                         board,
                         !color,
                         NodeType.Other,
@@ -473,6 +499,7 @@ pub const Engine = struct {
                 if (do_full_depth) {
                     score = -self.negamax(
                         allocator,
+                        io,
                         board,
                         !color,
                         NodeType.Other,
@@ -488,6 +515,7 @@ pub const Engine = struct {
                 if (node_type != NodeType.Other and score > alpha) {
                     score = -self.negamax(
                         allocator,
+                        io,
                         board,
                         !color,
                         NodeType.PV,
@@ -589,6 +617,7 @@ pub const Engine = struct {
     fn quiescence(
         self: *@This(),
         allocator: std.mem.Allocator,
+        io: std.Io,
         board: *chess.Board,
         comptime color: bool,
         alpha_: types.Score,
@@ -597,7 +626,7 @@ pub const Engine = struct {
         // === STEP 1 - Preparation
         // - Check if we should stop
         // This is done every few nodes
-        if (self.nodes & 2047 == 0 and self.shouldStop()) {
+        if (self.nodes & 2047 == 0 and self.shouldStop(io)) {
             self.stop = true;
             return 0;
         }
@@ -705,6 +734,7 @@ pub const Engine = struct {
             // Evaluate the leaf
             const leaf_eval = -self.quiescence(
                 allocator,
+                io,
                 board,
                 !color,
                 -beta,
