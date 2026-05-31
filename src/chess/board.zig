@@ -35,7 +35,10 @@ pub const Board = struct {
 
     pub fn setFen(self: *@This(), fen: []const u8) !void {
         var it = std.mem.splitScalar(u8, fen, ' ');
+        try self.setFenFromIterator(&it);
+    }
 
+    pub fn setFenFromIterator(self: *@This(), it: *std.mem.SplitIterator(u8, .scalar)) !void {
         self.history.clearRetainingCapacity();
 
         // Part 1 - Pieces
@@ -215,7 +218,6 @@ pub const Board = struct {
         const to = try Square.fromAlgebraic(str[2..4]);
         const promotion = if (str.len == 5) try pieces.from(str[4]) else pieces.NONE;
 
-
         if (promotion != pieces.NONE and !pieces.isPromotionPiece(promotion)) {
             return ChessError.InvalidPromotionPiece;
         }
@@ -367,9 +369,8 @@ pub const Board = struct {
                 } else {
                     b.setEnPassant(to - 8);
                 }
-            }
-
-            if (b.state.en_passant != null) {
+                std.debug.assert(b.state.en_passant != null);
+            } else if (b.state.en_passant != null) {
                 b.removeEnPassant();
             }
         }
@@ -377,7 +378,7 @@ pub const Board = struct {
         // Swap side
         b.swapSide();
 
-        // Add move number and check if the move is legal
+        // Add move number
         if (color) {
             b.state.move_number += 1;
         }
@@ -428,7 +429,6 @@ pub const Board = struct {
                 },
             }
         }
-
     }
 
     pub fn makeNullMove(
@@ -798,6 +798,17 @@ fn addToMovelist(
         move_data |= pieces.NONE << ChessMove.shift.PROMOTION;
         movelist.add(ChessMove{ .x = move_data });
     }
+}
+
+test "fen" {
+    const allocator = std.testing.allocator;
+
+    tables.initAll();
+
+    var board = try Board.fromFen(allocator, constants.Fen.STARTPOS);
+    defer board.deinit(allocator);
+
+    try board.setFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
 test "parse moves" {

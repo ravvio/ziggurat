@@ -34,13 +34,13 @@ pub const Uci = struct {
     /// https://github.com/SnowballSH/Avalanche
     pub fn run(self: *@This(), allocator: std.mem.Allocator, io: std.Io) !void {
         var inbuf: [4 * 1024]u8 = undefined;
-        var stdin = std.Io.File.stdin().readerStreaming(io, &inbuf);
+        var stdin = std.Io.File.stdin().reader(io, &inbuf);
         var outbuf: [4 * 1024]u8 = undefined;
-        var stdout = std.Io.File.stdout().writerStreaming(io, &outbuf);
+        var stdout = std.Io.File.stdout().writer(io, &outbuf);
 
         while (true) {
             const in = try stdin.interface.takeDelimiterExclusive('\n');
-            std.debug.print("in {s}\n", .{in});
+            stdin.interface.toss(1);
 
             // Trim carriage return and split on space
             const line = std.mem.trim(u8, in, "\r");
@@ -56,7 +56,6 @@ pub const Uci = struct {
             }
             // Ask if ready
             else if (std.mem.eql(u8, cmd.?, "isready")) {
-                std.debug.print("ready\n", .{});
                 _ = try stdout.interface.write("readyok\n");
                 _ = try stdout.interface.flush();
             }
@@ -128,9 +127,7 @@ pub const Uci = struct {
                     if (std.mem.eql(u8, subcmd, "startpos")) {
                         try self.board.setFen(chess.constants.Fen.STARTPOS);
                     } else if (std.mem.eql(u8, subcmd, "fen")) {
-                        if (tokens.next()) |fen| {
-                            try self.board.setFen(fen);
-                        }
+                        try self.board.setFenFromIterator(&tokens);
                     } else {
                         continue;
                     }

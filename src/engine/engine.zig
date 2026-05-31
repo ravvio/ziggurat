@@ -410,19 +410,6 @@ pub const Engine = struct {
         // Iterate all moves
         while (movelist.pick()) |move| {
             // Assert that the first move is the hashmove if we found one
-            if (hashmove != 0 and movesfound == 0 and move.withoutSortScore().x != hashmove) {
-                const m = chess.ChessMove{ .x = hashmove};
-                chess.bitboard.debugPrint(board.pawns(true));
-                chess.bitboard.debugPrint(board.pawns(false));
-                std.debug.print("{} to move", .{!board.state.current_side});
-                std.debug.print("Hashmove {f} ({} c {}), Move {f} ({} c {}) - En {?}\n", .{
-                    m, m.piece(), m.capture(), move, move.piece(), move.capture(), board.state.en_passant});
-
-                for (0..movelist.count) |i| {
-                    const mo = movelist.list[i];
-                    std.debug.print("{f} - {}\n", .{mo, mo.getSortScore()});
-                }
-            }
             std.debug.assert(hashmove == 0 or movesfound > 0 or move.withoutSortScore().x == hashmove);
 
             // Make the move
