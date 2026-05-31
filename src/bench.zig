@@ -80,12 +80,12 @@ pub fn main(init: std.process.Init) !void {
         .{},
     );
     try bench.addParam(
-        "Eval10 startpos",
+        "Eval10 kiwipete",
         &eval.EvalBench.init(io, chess.constants.Fen.KIWIPETE, 10),
         .{},
     );
     try bench.addParam(
-        "Eval12 startpos",
+        "Eval12 kiwipete",
         &eval.EvalBench.init(io, chess.constants.Fen.KIWIPETE, 12),
         .{},
     );

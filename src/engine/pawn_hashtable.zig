@@ -10,8 +10,6 @@ pub const PawnStructure = struct {
     score: types.Score = 0,
 };
 
-const high_bytes: u64 = 0xFF_FF_FF_FF_00_00_00_00;
-
 pub const PT = struct {
     megabytes: usize,
     size: usize,

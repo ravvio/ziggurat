@@ -51,7 +51,7 @@ pub const Uci = struct {
 
             // Stop the search
             if (std.mem.eql(u8, cmd.?, "stop")) {
-                self.engine.stop = true;
+                self.stopSearch();
                 continue;
             }
             // Ask if ready
@@ -79,12 +79,13 @@ pub const Uci = struct {
 
             // Quit the program
             if (std.mem.eql(u8, cmd.?, "quit")) {
+                self.stopSearch();
                 break;
             }
             // Ask for idetification
             else if (std.mem.eql(u8, cmd.?, "uci")) {
                 _ = try stdout.interface.write(
-                    \\id name ziggurat_0.8.3
+                    \\id name ziggurat_0.8.4
                     \\id author Alessio Raviola <alessio.raviola.98@gmail.com>
                     \\
                 );
@@ -152,17 +153,27 @@ pub const Uci = struct {
             }
             // Run evaluation
             else if (std.mem.eql(u8, cmd.?, "go")) {
+                self.stopSearch();
+
                 // Parse other settings and set stuff like the time to tink for
                 const movetime, const max_depth = self.handleGoInfo(&tokens);
 
                 // Start the engine
-                self.engine.stop = false;
+                self.engine.stop.store(false, .release);
                 self.search_thread = try std.Thread.spawn(
                     .{ .stack_size = 64 * 1024 * 1024 },
                     startSearch,
                     .{ allocator, io, &self.engine, &self.board, movetime, max_depth },
                 );
             }
+        }
+    }
+
+    fn stopSearch(self: *Uci) void {
+        self.engine.stop.store(true, .release);
+        if (self.search_thread) |t| {
+            t.join();
+            self.search_thread = null;
         }
     }
 

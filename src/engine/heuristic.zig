@@ -1,6 +1,7 @@
 const std = @import("std");
 const chess = @import("../chess.zig");
 const constants = chess.constants;
+const pieces = constants.pieces;
 const Colors = constants.Colors;
 const types = @import("types.zig");
 const tables = @import("heuristic_tables.zig");
@@ -67,7 +68,7 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
             res -= tables.piece_value[Colors.ublack][piece][sq];
             gamephase += gamephase_increments[piece];
 
-            const attacks = chess.tables.pieceAttacks(color, piece, sq, occupied);
+            const attacks = chess.tables.pieceAttacks(Colors.black, piece, sq, occupied);
             mobility_score -= mobility_scores[piece][@popCount(attacks)];
             black_targets[piece] |= attacks;
         }
@@ -78,8 +79,8 @@ pub fn evaluate(board: *chess.Board, comptime color: bool) types.Score {
             res += tables.piece_value[Colors.uwhite][piece][sq];
             gamephase += gamephase_increments[piece];
 
-            const attacks = chess.tables.pieceAttacks(color, piece, sq, occupied);
-            mobility_score -= mobility_scores[piece][@popCount(attacks)];
+            const attacks = chess.tables.pieceAttacks(Colors.white, piece, sq, occupied);
+            mobility_score += mobility_scores[piece][@popCount(attacks)];
             white_targets[piece] |= attacks;
         }
     }
@@ -112,12 +113,12 @@ pub fn computeKingSafety(
     };
 
     // Knight and bishop
-    attack_counters += tables.vec_mul_2 * @popCount(@Vector(2, u64){ black_targets[1], white_targets[1] } & zones);
-    attack_counters += tables.vec_mul_3 * @popCount(@Vector(2, u64){ black_targets[2], white_targets[2] } & zones);
+    attack_counters += tables.vec_mul_2 * @popCount(@Vector(2, u64){ black_targets[pieces.KNIGHT], white_targets[pieces.KNIGHT] } & zones);
+    attack_counters += tables.vec_mul_3 * @popCount(@Vector(2, u64){ black_targets[pieces.BISHOP], white_targets[pieces.BISHOP] } & zones);
     // Rook
-    attack_counters += tables.vec_mul_4 * @popCount(@Vector(2, u64){ black_targets[3], white_targets[3] } & zones);
+    attack_counters += tables.vec_mul_4 * @popCount(@Vector(2, u64){ black_targets[pieces.ROOK], white_targets[pieces.ROOK] } & zones);
     // Queen
-    attack_counters += @popCount(@Vector(2, u64){ black_targets[4], white_targets[4] } & zones);
+    attack_counters += tables.vec_mul_5 * @popCount(@Vector(2, u64){ black_targets[pieces.QUEEN], white_targets[pieces.QUEEN] } & zones);
 
     var bc, var wc = attack_counters;
 

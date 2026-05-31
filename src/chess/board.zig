@@ -254,6 +254,7 @@ pub const Board = struct {
 
     pub fn regenerateZobrist(b: *Board) void {
         var z: u64 = 0;
+        var p: u64 = 0;
         // Pieces
         var iterator_b = bb.BitboardIterator{ .u = b.colors[0] };
         while (iterator_b.next()) |sq| {
@@ -261,7 +262,7 @@ pub const Board = struct {
             z ^= zobrist_values.pieces[0][piece][sq];
 
             if (piece == pieces.PAWN) {
-                b.state.pawn_structure_key ^= zobrist_values.pieces[0][piece][sq];
+                p ^= zobrist_values.pieces[0][piece][sq];
             }
         }
         var iterator_w = bb.BitboardIterator{ .u = b.colors[1] };
@@ -270,7 +271,7 @@ pub const Board = struct {
             z ^= zobrist_values.pieces[1][piece][sq];
 
             if (piece == pieces.PAWN) {
-                b.state.pawn_structure_key ^= zobrist_values.pieces[1][piece][sq];
+                p ^= zobrist_values.pieces[1][piece][sq];
             }
         }
         // Castling
@@ -285,6 +286,7 @@ pub const Board = struct {
         }
 
         b.state.zobrist_key = z;
+        b.state.pawn_structure_key = p;
     }
 
     /// Makes a move on the board.
@@ -321,7 +323,12 @@ pub const Board = struct {
             if (b.state.en_passant != null) {
                 b.removeEnPassant();
             }
-            b.state.halfmove_clock += 1;
+
+            if (capture != constants.pieces.NONE) {
+                b.state.halfmove_clock = 0;
+            } else {
+                b.state.halfmove_clock += 1;
+            }
 
             // If the king is castling, also move the rook
             if (move.castling()) {

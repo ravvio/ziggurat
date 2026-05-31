@@ -69,7 +69,7 @@ pub const Engine = struct {
     /// Is the engine searching
     searching: bool = false,
     /// If the engine should stop as soon as possible
-    stop: bool = false,
+    stop: std.atomic.Value(bool) = std.atomic.Value(bool).init(false),
     // Start of the search timestamp
     start_search_timestamp: std.Io.Timestamp = std.Io.Timestamp.zero,
 
@@ -127,7 +127,8 @@ pub const Engine = struct {
 
     fn shouldStop(self: *Engine, io: std.Io) bool {
         const current_time = self.searchTime(io);
-        return self.stop or current_time > @min(self.max_time, self.search_time);
+        const stop = self.stop.load(.acquire);
+        return stop or current_time > @min(self.max_time, self.search_time);
     }
 
     /// Iterative deepening for finding the best move.
@@ -155,7 +156,7 @@ pub const Engine = struct {
             self.hash_history.append(allocator, state.zobrist_key) catch unreachable;
         }
 
-        self.stop = false;
+        self.stop.store(false, .release);
         self.searching = true;
 
         // Start a timer for reporting time taken
@@ -187,7 +188,7 @@ pub const Engine = struct {
                     0,
                 );
 
-                if (self.stop) {
+                if (self.stop.load(.acquire)) {
                     break :deepening;
                 }
 
@@ -277,7 +278,7 @@ pub const Engine = struct {
         // - Check if we should stop
         // This is done every few nodes
         if (node_type != NodeType.Root and self.nodes & 2047 == 0 and self.shouldStop(io)) {
-            self.stop = true;
+            self.stop.store(true, .release);
             return 0;
         }
 
@@ -360,7 +361,7 @@ pub const Engine = struct {
         if (!in_check and node_type == NodeType.Other) {
             // NULL MOVE PRUNING
             // More: https://www.chessprogramming.org/Null_Move_Pruning
-            if (!is_null and self.ply > 4 and depth > 1 + null_reduction and @popCount(board.colors[0] | board.colors[1]) > 8 and false) {
+            if (false and !is_null and self.ply > 4 and depth > 1 + null_reduction and @popCount(board.colors[0] | board.colors[1]) > 8) {
                 self.ply += 1;
                 board.makeNullMove(allocator);
                 var null_score = -self.negamax(
@@ -614,7 +615,7 @@ pub const Engine = struct {
         // - Check if we should stop
         // This is done every few nodes
         if (self.nodes & 2047 == 0 and self.shouldStop(io)) {
-            self.stop = true;
+            self.stop.store(true, .release);
             return 0;
         }
 

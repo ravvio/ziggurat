@@ -38,7 +38,7 @@ const Bucket = struct {
             }
             if (self.content[i].depth > high_depth) {
                 index = i;
-                high_depth = item.depth;
+                high_depth = self.content[i].depth;
             }
         }
         const high = &self.content[index];
